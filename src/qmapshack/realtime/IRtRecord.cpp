@@ -103,9 +103,7 @@ bool IRtRecord::writeEntry(const QByteArray& data)
 
 bool IRtRecord::readEntry(QByteArray& data)
 {
-    QDataStream stream(&data, QIODevice::ReadOnly);
-    stream.setVersion(QDataStream::Qt_5_2);
-    stream.setByteOrder(QDataStream::LittleEndian);
+    CDataStreamV1 stream(&data, QIODevice::ReadOnly);
 
     quint8 version;
     stream >> version;

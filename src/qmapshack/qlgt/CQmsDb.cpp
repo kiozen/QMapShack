@@ -167,9 +167,7 @@ void CQmsDb::addFolder(CQlgtFolder& folder)
 
     // serialize metadata of project
     QByteArray data;
-    QDataStream in(&data, QIODevice::WriteOnly);
-    in.setByteOrder(QDataStream::LittleEndian);
-    in.setVersion(QDataStream::Qt_5_2);
+    CDataStreamV1 in(&data, QIODevice::WriteOnly);
     project >> in;
 
     query.prepare("INSERT INTO folders (type, keyqms, name, comment, locked, data) VALUES (:type, :keyqms, :name, :comment, :locked, :data)");
@@ -247,9 +245,7 @@ quint64 CQmsDb::store(IGisItem& item)
 {
     // serialize complete history of item
     QByteArray data;
-    QDataStream in(&data, QIODevice::WriteOnly);
-    in.setByteOrder(QDataStream::LittleEndian);
-    in.setVersion(QDataStream::Qt_5_2);
+    CDataStreamV1 in(&data, QIODevice::WriteOnly);
     in << item.getHistory();
 
     QBuffer buffer;

@@ -1,5 +1,5 @@
 /**********************************************************************************************
-    Copyright (C) 2018 Oliver Eichler <oliver.eichler@gmx.de>
+    Copyright (C) 2020 Oliver Eichler <oliver.eichler@gmx.de>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,31 +16,17 @@
 
 **********************************************************************************************/
 
+#ifndef CDATASTREAMV2_H
+#define CDATASTREAMV2_H
 
-#include "realtime/opensky/CRtOpenSkyRecord.h"
+#include <QDataStream>
 
-CRtOpenSkyRecord::CRtOpenSkyRecord(QObject *parent)
-    : IRtRecord(parent)
+class CDataStreamV2 : public QDataStream
 {
-}
+public:
+    CDataStreamV2(const QByteArray &a);
+    virtual ~CDataStreamV2() = default;
+};
 
-bool CRtOpenSkyRecord::writeEntry(const CRtOpenSky::aircraft_t& aircraft)
-{
-    QByteArray data;
-    CDataStreamV1 stream(&data, QIODevice::WriteOnly);
-
-    // it's always a good idea to start with a version tag for future changes.
-    stream << quint8(1);
-
-    CTrackData::trkpt_t trkpt;
-    trkpt.lon   = aircraft.longitude;
-    trkpt.lat   = aircraft.latitude;
-    trkpt.ele   = aircraft.geoAltitude;
-    trkpt.time  = QDateTime::fromTime_t(aircraft.timePosition);
-
-    stream << trkpt;
-    track << trkpt;
-
-    return writeEntry(data);
-}
+#endif //CDATASTREAMV2_H
 

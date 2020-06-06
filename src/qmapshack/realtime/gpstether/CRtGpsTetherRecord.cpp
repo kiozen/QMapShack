@@ -26,9 +26,7 @@ CRtGpsTetherRecord::CRtGpsTetherRecord(QObject *parent)
 bool CRtGpsTetherRecord::writeEntry(qreal lon, qreal lat, qreal ele, qreal speed, const QDateTime& timestamp)
 {
     QByteArray data;
-    QDataStream stream(&data, QIODevice::WriteOnly);
-    stream.setVersion(QDataStream::Qt_5_2);
-    stream.setByteOrder(QDataStream::LittleEndian);
+    CDataStreamV1 stream(&data, QIODevice::WriteOnly);
 
     // it's always a good idea to start with a version tag for future changes.
     stream << quint8(1);

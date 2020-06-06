@@ -108,8 +108,9 @@ set( SRCS
     gis/prj/CDetailsPrj.cpp
     gis/prj/IGisProject.cpp
     gis/qlb/CQlbProject.cpp
+    gis/qms/CDataStreamV1.cpp
+    gis/qms/CDataStreamV2.cpp
     gis/qms/CQmsProject.cpp
-    gis/qms/serialization.cpp
     gis/rte/CCreateRouteFromWpt.cpp
     gis/rte/CDetailsRte.cpp
     gis/rte/CGisItemRte.cpp
@@ -459,6 +460,8 @@ set( HDRS
     gis/prj/CDetailsPrj.h
     gis/prj/IGisProject.h
     gis/qlb/CQlbProject.h
+    gis/qms/CDataStreamV1.h
+    gis/qms/CDataStreamV2.h
     gis/qms/CQmsProject.h
     gis/rte/CCreateRouteFromWpt.h
     gis/rte/CDetailsRte.h

@@ -90,9 +90,7 @@ CDBProject::CDBProject(const QString& dbName, quint64 id, CGisListWks *parent)
     }
     else
     {
-        QDataStream in(&data, QIODevice::ReadOnly);
-        in.setByteOrder(QDataStream::LittleEndian);
-        in.setVersion(QDataStream::Qt_5_2);
+        CDataStreamV1 in(&data, QIODevice::ReadOnly);
         *this << in;
         filename = dbName;
     }
@@ -336,9 +334,7 @@ void CDBProject::updateItem(IGisItem *&item, quint64 idItem, QSqlQuery &query)
 {
     // serialize complete history of item
     QByteArray data;
-    QDataStream in(&data, QIODevice::WriteOnly);
-    in.setByteOrder(QDataStream::LittleEndian);
-    in.setVersion(QDataStream::Qt_5_2);
+    CDataStreamV1 in(&data, QIODevice::WriteOnly);
     in << item->getHistory();
 
     // prepare icon to be saved
@@ -439,9 +435,7 @@ quint64 CDBProject::insertItem(IGisItem * item, QSqlQuery &query)
 
     // serialize complete history of item
     QByteArray data;
-    QDataStream in(&data, QIODevice::WriteOnly);
-    in.setByteOrder(QDataStream::LittleEndian);
-    in.setVersion(QDataStream::Qt_5_2);
+    CDataStreamV1 in(&data, QIODevice::WriteOnly);
     in << item->getHistory();
 
     // prepare icon to be saved
@@ -678,9 +672,7 @@ bool CDBProject::save(int lastResult)
 
     // serialize metadata of project
     QByteArray data;
-    QDataStream in(&data, QIODevice::WriteOnly);
-    in.setByteOrder(QDataStream::LittleEndian);
-    in.setVersion(QDataStream::Qt_5_2);
+    CDataStreamV1 in(&data, QIODevice::WriteOnly);
     *this >> in;
 
     // update folder entry in database
@@ -803,9 +795,7 @@ void CDBProject::update()
 
     if(!data.isEmpty())
     {
-        QDataStream in(&data, QIODevice::ReadOnly);
-        in.setByteOrder(QDataStream::LittleEndian);
-        in.setVersion(QDataStream::Qt_5_2);
+        CDataStreamV1 in(&data, QIODevice::ReadOnly);
         *this << in;
         filename = getDBName();
     }

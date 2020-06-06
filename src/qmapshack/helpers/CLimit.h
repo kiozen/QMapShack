@@ -26,6 +26,8 @@
 #include <QVariant>
 
 #include "units/IUnit.h"
+#include "gis/qms/CDataStreamV1.h"
+#include "gis/qms/CDataStreamV2.h"
 
 using fGetLimit    = std::function<qreal(const QString&)>;
 using fGetUnit     = std::function<QString(const QString&)>;
@@ -72,8 +74,8 @@ signals:
 
 private:
     friend class CGisItemTrk;
-    friend QDataStream& operator<<(QDataStream& stream, const CLimit& l);
-    friend QDataStream& operator>>(QDataStream& stream, CLimit& l);
+    friend CDataStreamV1& operator<<(CDataStreamV1& stream, const CLimit& l);
+    friend CDataStreamV1& operator>>(CDataStreamV1& stream, CLimit& l);
     void updateSys();
     void updateSys(const QString& src);
 

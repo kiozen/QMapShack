@@ -804,9 +804,7 @@ void CGisListWks::slotSaveWorkspace()
         }
 
         QByteArray data;
-        QDataStream stream(&data, QIODevice::WriteOnly);
-        stream.setVersion(QDataStream::Qt_5_2);
-        stream.setByteOrder(QDataStream::LittleEndian);
+        CDataStreamV1 stream(&data, QIODevice::WriteOnly);
 
         project->IGisProject::operator>>(stream);
 
@@ -855,9 +853,7 @@ void CGisListWks::slotLoadWorkspace()
             Qt::CheckState visible = query.value(4).toBool() ? Qt::Checked : Qt::Unchecked;
             QByteArray data        = query.value(5).toByteArray();
 
-            QDataStream stream(&data, QIODevice::ReadOnly);
-            stream.setVersion(QDataStream::Qt_5_2);
-            stream.setByteOrder(QDataStream::LittleEndian);
+            CDataStreamV1 stream(&data, QIODevice::ReadOnly);
 
             IGisProject *project = nullptr;
             switch(type)

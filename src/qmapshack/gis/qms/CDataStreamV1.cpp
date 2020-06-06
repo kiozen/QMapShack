@@ -1,5 +1,5 @@
 /**********************************************************************************************
-    Copyright (C) 2014 Oliver Eichler <oliver.eichler@gmx.de>
+    Copyright (C) 2020 Oliver Eichler <oliver.eichler@gmx.de>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -20,13 +20,10 @@
 #include "gis/db/CDBProject.h"
 #include "gis/ovl/CGisItemOvlArea.h"
 #include "gis/prj/IGisProject.h"
+#include "gis/qms/CDataStreamV1.h"
 #include "gis/rte/CGisItemRte.h"
 #include "gis/trk/CGisItemTrk.h"
 #include "gis/wpt/CGisItemWpt.h"
-#include "helpers/CLimit.h"
-#include "helpers/CValue.h"
-
-#include <QtWidgets>
 
 #define VER_TRK         quint8(7)
 #define VER_WPT         quint8(4)
@@ -58,21 +55,98 @@
 #define MAGIC_AREA      "QMArea    "
 #define MAGIC_PROJ      "QMProj    "
 
+CDataStreamV1::CDataStreamV1(const QByteArray &a)
+    : QDataStream(a)
+{
+    setByteOrder(QDataStream::LittleEndian);
+    setVersion(Qt_5_2);
+}
 
-QDataStream& operator<<(QDataStream& stream, const IGisItem::link_t& link)
+CDataStreamV1::CDataStreamV1(QByteArray * a, QIODevice::OpenMode mode)
+    : QDataStream(a, mode)
+{
+    setByteOrder(QDataStream::LittleEndian);
+    setVersion(Qt_5_2);
+}
+
+CDataStreamV1::CDataStreamV1(QIODevice *d)
+    : QDataStream(d)
+{
+    setByteOrder(QDataStream::LittleEndian);
+    setVersion(Qt_5_2);
+}
+
+template <typename T>
+CDataStreamV1& operator<<(CDataStreamV1& stream, const QList<T>& list)
+{
+    stream << quint32(list.size());
+    for(const T& item : list)
+    {
+        stream << item;
+    }
+
+    return stream;
+}
+
+template <typename T>
+CDataStreamV1& operator>>(CDataStreamV1& stream, QList<T>& list)
+{
+    list.clear();
+    quint32 N;
+    stream >> N;
+    for(quint32 n = 0; n < N; n++)
+    {
+        T item;
+        stream >> item;
+        list << item;
+    }
+
+    return stream;
+}
+
+template <typename T>
+CDataStreamV1& operator<<(CDataStreamV1& stream, const QVector<T>& vector)
+{
+    stream << quint32(vector.size());
+    for(const T& item : vector)
+    {
+        stream << item;
+    }
+
+    return stream;
+}
+
+template <typename T>
+CDataStreamV1& operator>>(CDataStreamV1& stream, QVector<T>& vector)
+{
+    vector.clear();
+    quint32 N;
+    stream >> N;
+    for(quint32 n = 0; n < N; n++)
+    {
+        T item;
+        stream >> item;
+        vector << item;
+    }
+
+    return stream;
+}
+
+
+CDataStreamV1& operator<<(CDataStreamV1& stream, const IGisItem::link_t& link)
 {
     stream << VER_LINK << link.uri << link.text << link.type;
     return stream;
 }
 
-QDataStream& operator>>(QDataStream& stream, IGisItem::link_t& link)
+CDataStreamV1& operator>>(CDataStreamV1& stream, IGisItem::link_t& link)
 {
     quint8 version;
     stream >> version >> link.uri >> link.text >> link.type;
     return stream;
 }
 
-QDataStream& operator<<(QDataStream& stream, const IGisItem::wpt_t& wpt)
+CDataStreamV1& operator<<(CDataStreamV1& stream, const IGisItem::wpt_t& wpt)
 {
     stream << VER_WPT_T;
     stream << wpt.lat;
@@ -98,7 +172,7 @@ QDataStream& operator<<(QDataStream& stream, const IGisItem::wpt_t& wpt)
     return stream;
 }
 
-QDataStream& operator>>(QDataStream& stream, IGisItem::wpt_t& wpt)
+CDataStreamV1& operator>>(CDataStreamV1& stream, IGisItem::wpt_t& wpt)
 {
     quint8 version;
     stream >> version;
@@ -126,7 +200,7 @@ QDataStream& operator>>(QDataStream& stream, IGisItem::wpt_t& wpt)
     return stream;
 }
 
-QDataStream& operator<<(QDataStream& stream, const IGisItem::history_event_t& e)
+CDataStreamV1& operator<<(CDataStreamV1& stream, const IGisItem::history_event_t& e)
 {
     stream << VER_HIST_EVT;
     stream << e.time;
@@ -139,7 +213,7 @@ QDataStream& operator<<(QDataStream& stream, const IGisItem::history_event_t& e)
     return stream;
 }
 
-QDataStream& operator>>(QDataStream& stream, IGisItem::history_event_t& e)
+CDataStreamV1& operator>>(CDataStreamV1& stream, IGisItem::history_event_t& e)
 {
     quint8 version;
     stream >> version;
@@ -159,7 +233,7 @@ QDataStream& operator>>(QDataStream& stream, IGisItem::history_event_t& e)
     return stream;
 }
 
-QDataStream& operator<<(QDataStream& stream, const IGisItem::history_t& h)
+CDataStreamV1& operator<<(CDataStreamV1& stream, const IGisItem::history_t& h)
 {
     stream << VER_HIST;
     stream << h.histIdxInitial;
@@ -168,7 +242,7 @@ QDataStream& operator<<(QDataStream& stream, const IGisItem::history_t& h)
     return stream;
 }
 
-QDataStream& operator>>(QDataStream& stream, IGisItem::history_t& h)
+CDataStreamV1& operator>>(CDataStreamV1& stream, IGisItem::history_t& h)
 {
     quint8 version;
     stream >> version;
@@ -203,7 +277,7 @@ QDataStream& operator>>(QDataStream& stream, IGisItem::history_t& h)
 }
 
 
-QDataStream& operator<<(QDataStream& stream, const CGisItemWpt::geocachelog_t& log)
+CDataStreamV1& operator<<(CDataStreamV1& stream, const CGisItemWpt::geocachelog_t& log)
 {
     stream << VER_GCLOG_T;
     stream << log.id;
@@ -217,7 +291,7 @@ QDataStream& operator<<(QDataStream& stream, const CGisItemWpt::geocachelog_t& l
     return stream;
 }
 
-QDataStream& operator>>(QDataStream& stream, CGisItemWpt::geocachelog_t& log)
+CDataStreamV1& operator>>(CDataStreamV1& stream, CGisItemWpt::geocachelog_t& log)
 {
     quint8 version, tmp8;
 
@@ -234,7 +308,7 @@ QDataStream& operator>>(QDataStream& stream, CGisItemWpt::geocachelog_t& log)
     return stream;
 }
 
-QDataStream& operator<<(QDataStream& stream, const CGisItemWpt::geocache_t& geocache)
+CDataStreamV1& operator<<(CDataStreamV1& stream, const CGisItemWpt::geocache_t& geocache)
 {
     stream << VER_GC_T;
     stream << quint8(geocache.hasData);
@@ -265,7 +339,7 @@ QDataStream& operator<<(QDataStream& stream, const CGisItemWpt::geocache_t& geoc
     return stream;
 }
 
-QDataStream& operator>>(QDataStream& stream, CGisItemWpt::geocache_t& geocache)
+CDataStreamV1& operator>>(CDataStreamV1& stream, CGisItemWpt::geocache_t& geocache)
 {
     quint8 version, tmp8;
 
@@ -315,7 +389,7 @@ QDataStream& operator>>(QDataStream& stream, CGisItemWpt::geocache_t& geocache)
     return stream;
 }
 
-QDataStream& operator<<(QDataStream& stream, const CGisItemWpt::image_t& image)
+CDataStreamV1& operator<<(CDataStreamV1& stream, const CGisItemWpt::image_t& image)
 {
     QBuffer imgBuf;
     image.pixmap.save(&imgBuf, "JPEG");
@@ -330,7 +404,7 @@ QDataStream& operator<<(QDataStream& stream, const CGisItemWpt::image_t& image)
     return stream;
 }
 
-QDataStream& operator>>(QDataStream& stream, CGisItemWpt::image_t& image)
+CDataStreamV1& operator>>(CDataStreamV1& stream, CGisItemWpt::image_t& image)
 {
     quint8 version;
     QBuffer imgBuf;
@@ -347,20 +421,20 @@ QDataStream& operator>>(QDataStream& stream, CGisItemWpt::image_t& image)
     return stream;
 }
 
-QDataStream& operator<<(QDataStream& stream, const CTrackData::trkseg_t& seg)
+CDataStreamV1& operator<<(CDataStreamV1& stream, const CTrackData::trkseg_t& seg)
 {
     stream << VER_TRKSEG << seg.pts;
     return stream;
 }
 
-QDataStream& operator>>(QDataStream& stream, CTrackData::trkseg_t& seg)
+CDataStreamV1& operator>>(CDataStreamV1& stream, CTrackData::trkseg_t& seg)
 {
     quint8 version;
     stream >> version >> seg.pts;
     return stream;
 }
 
-QDataStream& operator<<(QDataStream& stream, const CTrackData::trkpt_t& pt)
+CDataStreamV1& operator<<(CDataStreamV1& stream, const CTrackData::trkpt_t& pt)
 {
     stream << VER_TRKPT << pt.flags;
     stream << (const IGisItem::wpt_t&)pt;
@@ -369,7 +443,7 @@ QDataStream& operator<<(QDataStream& stream, const CTrackData::trkpt_t& pt)
     return stream;
 }
 
-QDataStream& operator>>(QDataStream& stream, CTrackData::trkpt_t& pt)
+CDataStreamV1& operator>>(CDataStreamV1& stream, CTrackData::trkpt_t& pt)
 {
     quint8 version;
     stream >> version >> pt.flags;
@@ -391,7 +465,7 @@ QDataStream& operator>>(QDataStream& stream, CTrackData::trkpt_t& pt)
     return stream;
 }
 
-QDataStream& operator<<(QDataStream& stream, const CGisItemRte::subpt_t& pt)
+CDataStreamV1& operator<<(CDataStreamV1& stream, const CGisItemRte::subpt_t& pt)
 {
     stream << VER_RTESUBPT;
     stream << pt.lon;
@@ -410,7 +484,7 @@ QDataStream& operator<<(QDataStream& stream, const CGisItemRte::subpt_t& pt)
     return stream;
 }
 
-QDataStream& operator>>(QDataStream& stream, CGisItemRte::subpt_t& pt)
+CDataStreamV1& operator>>(CDataStreamV1& stream, CGisItemRte::subpt_t& pt)
 {
     quint8 version;
 
@@ -439,7 +513,7 @@ QDataStream& operator>>(QDataStream& stream, CGisItemRte::subpt_t& pt)
     return stream;
 }
 
-QDataStream& operator<<(QDataStream& stream, const CGisItemRte::rtept_t& pt)
+CDataStreamV1& operator<<(CDataStreamV1& stream, const CGisItemRte::rtept_t& pt)
 {
     stream << VER_RTEPT << pt.focus << pt.icon;
     stream << (const IGisItem::wpt_t&)pt;
@@ -448,7 +522,7 @@ QDataStream& operator<<(QDataStream& stream, const CGisItemRte::rtept_t& pt)
     return stream;
 }
 
-QDataStream& operator>>(QDataStream& stream, CGisItemRte::rtept_t& pt)
+CDataStreamV1& operator>>(CDataStreamV1& stream, CGisItemRte::rtept_t& pt)
 {
     quint8 version;
     stream >> version >> pt.focus >> pt.icon;
@@ -462,39 +536,39 @@ QDataStream& operator>>(QDataStream& stream, CGisItemRte::rtept_t& pt)
 }
 
 
-QDataStream& operator<<(QDataStream& stream, const IGisProject::copyright_t& c)
+CDataStreamV1& operator<<(CDataStreamV1& stream, const IGisProject::copyright_t& c)
 {
     stream << VER_COPYRIGHT << c.author << c.year << c.license;
     return stream;
 }
 
-QDataStream& operator>>(QDataStream& stream, IGisProject::copyright_t& c)
+CDataStreamV1& operator>>(CDataStreamV1& stream, IGisProject::copyright_t& c)
 {
     quint8 version;
     stream >> version >> c.author >> c.year >> c.license;
     return stream;
 }
 
-QDataStream& operator<<(QDataStream& stream, const IGisProject::person_t& p)
+CDataStreamV1& operator<<(CDataStreamV1& stream, const IGisProject::person_t& p)
 {
     stream << VER_PERSON << p.name << p.id << p.domain << p.link;
     return stream;
 }
 
-QDataStream& operator>>(QDataStream& stream, IGisProject::person_t& p)
+CDataStreamV1& operator>>(CDataStreamV1& stream, IGisProject::person_t& p)
 {
     quint8 version;
     stream >> version >> p.name >> p.id >> p.domain >> p.link;
     return stream;
 }
 
-QDataStream& operator<<(QDataStream& stream, const CValue& v)
+CDataStreamV1& operator<<(CDataStreamV1& stream, const CValue& v)
 {
     stream << VER_CVALUE << quint8(v.mode) << v.valUser;
     return stream;
 }
 
-QDataStream& operator>>(QDataStream& stream, CValue& v)
+CDataStreamV1& operator>>(CDataStreamV1& stream, CValue& v)
 {
     quint8 version, mode;
     stream >> version >> mode >> v.valUser;
@@ -505,13 +579,13 @@ QDataStream& operator>>(QDataStream& stream, CValue& v)
     return stream;
 }
 
-QDataStream& operator<<(QDataStream& stream, const CLimit& l)
+CDataStreamV1& operator<<(CDataStreamV1& stream, const CLimit& l)
 {
     stream << VER_CLIMIT << quint8(l.mode) << l.source << l.minUser << l.maxUser;
     return stream;
 }
 
-QDataStream& operator>>(QDataStream& stream, CLimit& l)
+CDataStreamV1& operator>>(CDataStreamV1& stream, CLimit& l)
 {
     quint8 version, mode;
 
@@ -521,7 +595,7 @@ QDataStream& operator>>(QDataStream& stream, CLimit& l)
     return stream;
 }
 
-QDataStream& operator<<(QDataStream& stream, const CEnergyCycling::energy_set_t &e)
+CDataStreamV1& operator<<(CDataStreamV1& stream, const CEnergyCycling::energy_set_t &e)
 {
     stream << VER_ENERGYCYCLE << e.driverWeight << e.bikeWeight << e.airDensity
            << e.windSpeedIndex << e.windSpeed << e.windPositionIndex
@@ -530,7 +604,7 @@ QDataStream& operator<<(QDataStream& stream, const CEnergyCycling::energy_set_t 
     return stream;
 }
 
-QDataStream& operator>>(QDataStream& stream, CEnergyCycling::energy_set_t &e)
+CDataStreamV1& operator>>(CDataStreamV1& stream, CEnergyCycling::energy_set_t &e)
 {
     quint8 version;
     stream >> version >> e.driverWeight >> e.bikeWeight >> e.airDensity
@@ -542,12 +616,10 @@ QDataStream& operator>>(QDataStream& stream, CEnergyCycling::energy_set_t &e)
 
 // ---------------- main objects ---------------------------------
 
-QDataStream& CGisItemTrk::operator>>(QDataStream& stream) const
+CDataStreamV1& CGisItemTrk::operator>>(CDataStreamV1& stream) const
 {
     QByteArray buffer;
-    QDataStream out(&buffer, QIODevice::WriteOnly);
-    out.setByteOrder(QDataStream::LittleEndian);
-    out.setVersion(QDataStream::Qt_5_2);
+    CDataStreamV1 out(&buffer, QIODevice::WriteOnly);
 
     out << key.item;
     out << flags;
@@ -580,7 +652,7 @@ QDataStream& CGisItemTrk::operator>>(QDataStream& stream) const
     return stream;
 }
 
-QDataStream& CGisItemTrk::operator<<(QDataStream& stream)
+CDataStreamV1& CGisItemTrk::operator<<(CDataStreamV1& stream)
 {
     quint8 version;
     QByteArray buffer;
@@ -602,9 +674,7 @@ QDataStream& CGisItemTrk::operator<<(QDataStream& stream)
     stream >> buffer;
     buffer = qUncompress(buffer);
 
-    QDataStream in(&buffer, QIODevice::ReadOnly);
-    in.setByteOrder(QDataStream::LittleEndian);
-    in.setVersion(QDataStream::Qt_5_2);
+    CDataStreamV1 in(&buffer, QIODevice::ReadOnly);
 
     in >> key.item;
     in >> flags;
@@ -683,7 +753,7 @@ QDataStream& CGisItemTrk::operator<<(QDataStream& stream)
     return stream;
 }
 
-QDataStream& CGisItemWpt::operator<<(QDataStream& stream)
+CDataStreamV1& CGisItemWpt::operator<<(CDataStreamV1& stream)
 {
     quint8 version;
     QByteArray buffer;
@@ -703,9 +773,7 @@ QDataStream& CGisItemWpt::operator<<(QDataStream& stream)
     stream >> buffer;
     buffer = qUncompress(buffer);
 
-    QDataStream in(&buffer, QIODevice::ReadOnly);
-    in.setByteOrder(QDataStream::LittleEndian);
-    in.setVersion(QDataStream::Qt_5_2);
+    CDataStreamV1 in(&buffer, QIODevice::ReadOnly);
 
     in >> key.item;
     in >> flags;
@@ -739,12 +807,10 @@ QDataStream& CGisItemWpt::operator<<(QDataStream& stream)
     return stream;
 }
 
-QDataStream& CGisItemWpt::operator>>(QDataStream& stream) const
+CDataStreamV1& CGisItemWpt::operator>>(CDataStreamV1& stream) const
 {
     QByteArray buffer;
-    QDataStream out(&buffer, QIODevice::WriteOnly);
-    out.setByteOrder(QDataStream::LittleEndian);
-    out.setVersion(QDataStream::Qt_5_2);
+    CDataStreamV1 out(&buffer, QIODevice::WriteOnly);
 
     out << key.item;
     out << flags;
@@ -764,7 +830,7 @@ QDataStream& CGisItemWpt::operator>>(QDataStream& stream) const
     return stream;
 }
 
-QDataStream& CGisItemRte::operator<<(QDataStream& stream)
+CDataStreamV1& CGisItemRte::operator<<(CDataStreamV1& stream)
 {
     quint8 version;
     QByteArray buffer;
@@ -784,9 +850,7 @@ QDataStream& CGisItemRte::operator<<(QDataStream& stream)
     stream >> buffer;
     buffer = qUncompress(buffer);
 
-    QDataStream in(&buffer, QIODevice::ReadOnly);
-    in.setByteOrder(QDataStream::LittleEndian);
-    in.setVersion(QDataStream::Qt_5_2);
+    CDataStreamV1 in(&buffer, QIODevice::ReadOnly);
 
     in >> key.item;
     in >> flags;
@@ -825,12 +889,10 @@ QDataStream& CGisItemRte::operator<<(QDataStream& stream)
     return stream;
 }
 
-QDataStream& CGisItemRte::operator>>(QDataStream& stream) const
+CDataStreamV1& CGisItemRte::operator>>(CDataStreamV1& stream) const
 {
     QByteArray buffer;
-    QDataStream out(&buffer, QIODevice::WriteOnly);
-    out.setByteOrder(QDataStream::LittleEndian);
-    out.setVersion(QDataStream::Qt_5_2);
+    CDataStreamV1 out(&buffer, QIODevice::WriteOnly);
 
     out << key.item;
     out << flags;
@@ -858,7 +920,7 @@ QDataStream& CGisItemRte::operator>>(QDataStream& stream) const
     return stream;
 }
 
-QDataStream& CGisItemOvlArea::operator<<(QDataStream& stream)
+CDataStreamV1& CGisItemOvlArea::operator<<(CDataStreamV1& stream)
 {
     quint8 version, tmp8;
     QByteArray buffer;
@@ -878,9 +940,7 @@ QDataStream& CGisItemOvlArea::operator<<(QDataStream& stream)
     stream >> buffer;
     buffer = qUncompress(buffer);
 
-    QDataStream in(&buffer, QIODevice::ReadOnly);
-    in.setByteOrder(QDataStream::LittleEndian);
-    in.setVersion(QDataStream::Qt_5_2);
+    CDataStreamV1 in(&buffer, QIODevice::ReadOnly);
 
     in >> key.item;
     in >> flags;
@@ -912,12 +972,10 @@ QDataStream& CGisItemOvlArea::operator<<(QDataStream& stream)
     return stream;
 }
 
-QDataStream& CGisItemOvlArea::operator>>(QDataStream& stream) const
+CDataStreamV1& CGisItemOvlArea::operator>>(CDataStreamV1& stream) const
 {
     QByteArray buffer;
-    QDataStream out(&buffer, QIODevice::WriteOnly);
-    out.setByteOrder(QDataStream::LittleEndian);
-    out.setVersion(QDataStream::Qt_5_2);
+    CDataStreamV1 out(&buffer, QIODevice::WriteOnly);
 
     out << key.item;
     out << flags;
@@ -943,7 +1001,7 @@ QDataStream& CGisItemOvlArea::operator>>(QDataStream& stream) const
     return stream;
 }
 
-QDataStream& IGisProject::operator<<(QDataStream& stream)
+CDataStreamV1& IGisProject::operator<<(CDataStreamV1& stream)
 {
     quint8 version;
     QIODevice * dev = stream.device();
@@ -1059,7 +1117,7 @@ QDataStream& IGisProject::operator<<(QDataStream& stream)
     return stream;
 }
 
-QDataStream& IGisProject::operator>>(QDataStream& stream) const
+CDataStreamV1& IGisProject::operator>>(CDataStreamV1& stream) const
 {
     stream.writeRawData(MAGIC_PROJ, MAGIC_SIZE);
     stream << VER_PROJECT;
@@ -1134,7 +1192,7 @@ QDataStream& IGisProject::operator>>(QDataStream& stream) const
     return stream;
 }
 
-QDataStream& CDBProject::operator<<(QDataStream& stream)
+CDataStreamV1& CDBProject::operator<<(CDataStreamV1& stream)
 {
     quint8 version;
     QIODevice * dev = stream.device();
@@ -1187,7 +1245,7 @@ QDataStream& CDBProject::operator<<(QDataStream& stream)
     return stream;
 }
 
-QDataStream& CDBProject::operator>>(QDataStream& stream) const
+CDataStreamV1& CDBProject::operator>>(CDataStreamV1& stream) const
 {
     stream.writeRawData(MAGIC_PROJ, MAGIC_SIZE);
     stream << VER_PROJECT;

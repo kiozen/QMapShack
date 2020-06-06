@@ -196,9 +196,7 @@ CGisItemTrk::CGisItemTrk(const CQlgtTrack &trk1, IGisProject * project)
         event.comment   = tr("Copy flag information from QLandkarte GT track");
         event.icon      = "://icons/48x48/PointHide.png";
 
-        QDataStream stream(&event.data, QIODevice::WriteOnly);
-        stream.setByteOrder(QDataStream::LittleEndian);
-        stream.setVersion(QDataStream::Qt_5_2);
+        CDataStreamV1 stream(&event.data, QIODevice::WriteOnly);
 
         *this >> stream;
 

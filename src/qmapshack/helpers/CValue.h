@@ -19,6 +19,7 @@
 #ifndef CVALUE_H
 #define CVALUE_H
 
+#include "gis/qms/CDataStreamV1.h"
 #include <functional>
 #include <QSet>
 #include <QVariant>
@@ -49,8 +50,8 @@ public:
     const QVariant& operator=(const QVariant& v);
 
 private:
-    friend QDataStream& operator<<(QDataStream& stream, const CValue& v);
-    friend QDataStream& operator>>(QDataStream& stream, CValue& v);
+    friend CDataStreamV1& operator<<(CDataStreamV1& stream, const CValue& v);
+    friend CDataStreamV1& operator>>(CDataStreamV1& stream, CValue& v);
 
     void updateSys(const QString &tag, const QVariant& val);
 

@@ -34,6 +34,7 @@
 #include <QUrl>
 #include <QVariant>
 
+#include "gis/qms/CDataStreamV1.h"
 #include "units/IUnit.h"
 
 class CGisDraw;
@@ -449,7 +450,7 @@ public:
        @param stream the binary data stream
        @return The stream object.
      */
-    virtual QDataStream& operator<<(QDataStream& stream) = 0;
+    virtual CDataStreamV1& operator<<(CDataStreamV1& stream) = 0;
     /**
        @brief Serialize object into a QDataStream
 
@@ -458,7 +459,7 @@ public:
        @param stream the binary data stream
        @return The stream object.
      */
-    virtual QDataStream& operator>>(QDataStream& stream) const = 0;
+    virtual CDataStreamV1& operator>>(CDataStreamV1& stream) const = 0;
 
     /**
        @brief Get read access to history of changes
@@ -671,8 +672,8 @@ private:
     void showIcon();
 };
 
-QDataStream& operator>>(QDataStream& stream, IGisItem::history_t& h);
-QDataStream& operator<<(QDataStream& stream, const IGisItem::history_t& h);
+CDataStreamV1& operator>>(CDataStreamV1& stream, IGisItem::history_t& h);
+CDataStreamV1& operator<<(CDataStreamV1& stream, const IGisItem::history_t& h);
 
 #endif //IGISITEM_H
 

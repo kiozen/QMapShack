@@ -49,9 +49,7 @@ CQmsProject::CQmsProject(const QString &filename, CGisListWks *parent)
         return;
     }
 
-    QDataStream in(&file);
-    in.setByteOrder(QDataStream::LittleEndian);
-    in.setVersion(QDataStream::Qt_5_2);
+    CDataStreamV1 in(&file);
     *this << in;
     file.close();
 
@@ -80,9 +78,7 @@ bool CQmsProject::saveAs(const QString& fn, IGisProject& project)
         QMessageBox::critical(CMainWindow::getBestWidgetForParent(), tr("Failed to open..."), tr("Failed to open %1").arg(_fn_), QMessageBox::Abort);
         return false;
     }
-    QDataStream out(&file);
-    out.setByteOrder(QDataStream::LittleEndian);
-    out.setVersion(QDataStream::Qt_5_2);
+    CDataStreamV1 out(&file);
 
     QString tmp = project.getFilename();
     project.setFilename(_fn_);

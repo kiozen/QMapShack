@@ -184,13 +184,13 @@ public:
        @param stream  the data stream to read from
        @return A reference to the stream
      */
-    QDataStream& operator<<(QDataStream& stream) override;
+    CDataStreamV1& operator<<(CDataStreamV1& stream) override;
     /**
        @brief Serialize track into a binary data stream
        @param stream  the data stream to write to.
        @return A reference to the stream
      */
-    QDataStream& operator>>(QDataStream& stream) const override;
+    CDataStreamV1& operator>>(CDataStreamV1& stream) const override;
 
     /// get name of track
     const QString& getName() const override

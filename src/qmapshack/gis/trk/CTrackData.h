@@ -355,8 +355,8 @@ public:
     iterator<const CTrackData, const trkpt_t> end()   const { return iterator<const CTrackData, const trkpt_t>(*this, segs.count(), 0); }
 };
 
-QDataStream& operator<<(QDataStream& stream, const CTrackData::trkpt_t& pt);
-QDataStream& operator>>(QDataStream& stream, CTrackData::trkpt_t& pt);
+CDataStreamV1& operator<<(CDataStreamV1& stream, const CTrackData::trkpt_t& pt);
+CDataStreamV1& operator>>(CDataStreamV1& stream, CTrackData::trkpt_t& pt);
 
 using trkact_t = CTrackData::trkpt_t::act20_e;
 

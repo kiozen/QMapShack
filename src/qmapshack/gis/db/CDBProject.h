@@ -75,7 +75,7 @@ public:
        @param stream the binary data stream
        @return The stream object.
      */
-    QDataStream& operator<<(QDataStream& stream) override;
+    CDataStreamV1& operator<<(CDataStreamV1& stream) override;
 
     /**
        @brief Serialize object into a QDataStream
@@ -85,7 +85,7 @@ public:
        @param stream the binary data stream
        @return The stream object.
      */
-    QDataStream& operator>>(QDataStream& stream) const override;
+    CDataStreamV1& operator>>(CDataStreamV1& stream) const override;
 
     /**
        @brief Send a CEvtW2DAckInfo event to the database view

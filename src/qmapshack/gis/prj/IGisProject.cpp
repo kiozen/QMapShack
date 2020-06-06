@@ -210,9 +210,7 @@ void IGisProject::genKey() const
     if(key.isEmpty())
     {
         QByteArray buffer;
-        QDataStream stream(&buffer, QIODevice::WriteOnly);
-        stream.setByteOrder(QDataStream::LittleEndian);
-        stream.setVersion(QDataStream::Qt_5_2);
+        CDataStreamV1 stream(&buffer, QIODevice::WriteOnly);
 
         *this >> stream;
 

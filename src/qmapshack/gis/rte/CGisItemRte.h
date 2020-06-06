@@ -120,8 +120,8 @@ public:
 
     IGisItem * createClone() override;
 
-    QDataStream& operator<<(QDataStream& stream) override;
-    QDataStream& operator>>(QDataStream& stream) const override;
+    CDataStreamV1& operator<<(CDataStreamV1& stream) override;
+    CDataStreamV1& operator>>(CDataStreamV1& stream) const override;
 
     const QString& getName() const override
     {

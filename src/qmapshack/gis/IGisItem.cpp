@@ -223,9 +223,7 @@ void IGisItem::genKey() const
     if(key.item.isEmpty())
     {
         QByteArray buffer;
-        QDataStream stream(&buffer, QIODevice::WriteOnly);
-        stream.setByteOrder(QDataStream::LittleEndian);
-        stream.setVersion(QDataStream::Qt_5_2);
+        CDataStreamV1 stream(&buffer, QIODevice::WriteOnly);
 
         *this >> stream;
 
@@ -252,9 +250,7 @@ void IGisItem::loadFromDb(quint64 id, QSqlDatabase& db)
     if(query.next())
     {
         QByteArray data(query.value(0).toByteArray());
-        QDataStream in(&data, QIODevice::ReadOnly);
-        in.setByteOrder(QDataStream::LittleEndian);
-        in.setVersion(QDataStream::Qt_5_2);
+        CDataStreamV1 in(&data, QIODevice::ReadOnly);
         in >> history;
         loadHistory(history.histIdxCurrent);
 
@@ -428,9 +424,7 @@ void IGisItem::changed(const QString &what, const QString &icon)
     event.icon      = icon;
     event.who       = CMainWindow::getUser();
 
-    QDataStream stream(&event.data, QIODevice::WriteOnly);
-    stream.setByteOrder(QDataStream::LittleEndian);
-    stream.setVersion(QDataStream::Qt_5_2);
+    CDataStreamV1 stream(&event.data, QIODevice::WriteOnly);
 
     *this >> stream;
 
@@ -453,9 +447,7 @@ void IGisItem::updateHistory()
     history_event_t& event = history.events[history.histIdxCurrent];
     event.data.clear();
 
-    QDataStream stream(&event.data, QIODevice::WriteOnly);
-    stream.setByteOrder(QDataStream::LittleEndian);
-    stream.setVersion(QDataStream::Qt_5_2);
+    CDataStreamV1 stream(&event.data, QIODevice::WriteOnly);
 
     *this >> stream;
 
@@ -498,9 +490,8 @@ void IGisItem::setupHistory()
     {
         history_event_t& event = history.events.last();
 
-        QDataStream stream(&event.data, QIODevice::WriteOnly);
-        stream.setByteOrder(QDataStream::LittleEndian);
-        stream.setVersion(QDataStream::Qt_5_2);
+        CDataStreamV1 stream(&event.data, QIODevice::WriteOnly);
+
         *this >> stream;
 
         QCryptographicHash md5(QCryptographicHash::Md5);
@@ -530,9 +521,8 @@ void IGisItem::loadHistory(int idx)
     }
 
     // restore item from history entry
-    QDataStream stream(&event.data, QIODevice::ReadOnly);
-    stream.setByteOrder(QDataStream::LittleEndian);
-    stream.setVersion(QDataStream::Qt_5_2);
+    CDataStreamV1 stream(&event.data, QIODevice::ReadOnly);
+
     *this << stream;
 
     history.histIdxCurrent = idx;

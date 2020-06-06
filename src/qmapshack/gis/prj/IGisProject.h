@@ -21,6 +21,7 @@
 #define IGISPROJECT_H
 
 #include "gis/IGisItem.h"
+#include "gis/qms/CDataStreamV1.h"
 #include "gis/rte/router/IRouter.h"
 #include "gis/search/CProjectFilterItem.h"
 #include "gis/search/CSearch.h"
@@ -465,7 +466,7 @@ public:
        @param stream the binary data stream
        @return The stream object.
      */
-    virtual QDataStream& operator<<(QDataStream& stream);
+    virtual CDataStreamV1& operator<<(CDataStreamV1& stream);
 
     /**
        @brief Serialize object into a QDataStream
@@ -475,7 +476,7 @@ public:
        @param stream the binary data stream
        @return The stream object.
      */
-    virtual QDataStream& operator>>(QDataStream& stream) const;
+    virtual CDataStreamV1& operator>>(CDataStreamV1& stream) const;
 
     /**
        @brief writeMetadata
