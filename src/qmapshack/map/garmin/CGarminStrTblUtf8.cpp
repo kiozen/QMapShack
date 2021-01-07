@@ -30,7 +30,7 @@ CGarminStrTblUtf8::~CGarminStrTblUtf8()
 }
 
 
-void CGarminStrTblUtf8::get(CFileExt& file, quint32 offset, type_e t, QStringList& labels)
+void CGarminStrTblUtf8::get(CFileExt& file, quint32 offset, type_e t, QStringList& labels) const
 {
     labels.clear();
     offset = calcOffset(file, offset, t);
@@ -51,6 +51,7 @@ void CGarminStrTblUtf8::get(CFileExt& file, quint32 offset, type_e t, QStringLis
     readFile(file, offsetLBL1 + offset, size, data);
     char * lbl = data.data();
 
+    char buffer[1025];
     char * pBuffer = buffer;
     *pBuffer = 0;
 

@@ -36,16 +36,6 @@ public:
     void draw(IDrawContext::buffer_t& buf) override;
 
 private:
-    enum exce_e {eErrOpen, eErrAccess, errFormat, errAbort};
-    struct exce_t
-    {
-        exce_t(exce_e err, const QString& msg) : err(err), msg(msg)
-        {
-        }
-        exce_e err;
-        QString msg;
-    };
-
     struct layer_t
     {
         quint8 baseZoom;

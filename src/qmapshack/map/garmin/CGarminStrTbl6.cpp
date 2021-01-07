@@ -55,7 +55,7 @@ CGarminStrTbl6::~CGarminStrTbl6()
 }
 
 
-void CGarminStrTbl6::fill()
+void CGarminStrTbl6::fill(quint32& bits, quint32& reg, const quint8 * p) const
 {
     quint32 tmp;
     if(bits < 6)
@@ -67,7 +67,7 @@ void CGarminStrTbl6::fill()
 }
 
 
-void CGarminStrTbl6::get(CFileExt& file, quint32 offset, type_e t, QStringList& labels)
+void CGarminStrTbl6::get(CFileExt& file, quint32 offset, type_e t, QStringList& labels) const
 {
     labels.clear();
 
@@ -87,17 +87,18 @@ void CGarminStrTbl6::get(CFileExt& file, quint32 offset, type_e t, QStringList& 
     quint8 c1  = 0;
     quint8 c2  = 0;
     quint32 idx = 0;
-    reg         = 0;
-    bits        = 0;
+    quint32 reg = 0;
+    quint32 bits = 0;
+    char buffer[1025];
 
     QByteArray data;
     quint32 size = (sizeLBL1 - offset) < 200 ? (sizeLBL1 - offset) : 200;
 
     readFile(file, offsetLBL1 + offset, size, data);
 
-    p = (quint8*)data.data();
+    const quint8 * p = (quint8*)data.data();
 
-    fill();
+    fill(bits, reg, p);
 
     unsigned lastSeperator = 0;
     while(idx < (sizeof(buffer) - 1))
@@ -105,7 +106,7 @@ void CGarminStrTbl6::get(CFileExt& file, quint32 offset, type_e t, QStringList& 
         c1 = reg >> 26;
         reg <<= 6;
         bits -= 6;
-        fill();
+        fill(bits, reg, p);
         //terminator
         if(c1 > 0x2F)
         {
@@ -120,7 +121,7 @@ void CGarminStrTbl6::get(CFileExt& file, quint32 offset, type_e t, QStringList& 
                 c1 = reg >> 26;
                 reg <<= 6;
                 bits -= 6;
-                fill();
+                fill(bits, reg, p);
                 buffer[idx++] = str6tbl2[c1];
             }
             else if(c1 == 0x1B)
@@ -128,7 +129,7 @@ void CGarminStrTbl6::get(CFileExt& file, quint32 offset, type_e t, QStringList& 
                 c1 = reg >> 26;
                 reg <<= 6;
                 bits -= 6;
-                fill();
+                fill(bits, reg, p);
                 buffer[idx++] = str6tbl3[c1];
             }
             else if(c1 > 0x1C && c1 < 0x20)

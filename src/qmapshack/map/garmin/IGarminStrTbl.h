@@ -51,12 +51,12 @@ public:
         addrshift2 = shift;
     }
 
-    virtual void get(CFileExt& file, quint32 offset, type_e t, QStringList& info) = 0;
+    virtual void get(CFileExt& file, quint32 offset, type_e t, QStringList& info) const = 0;
 protected:
-    void readFile(CFileExt &file, quint32 offset, quint32 size, QByteArray& data);
-    quint32 calcOffset(CFileExt& file, const quint32 offset, type_e t);
+    void readFile(CFileExt &file, quint32 offset, quint32 size, QByteArray& data) const;
+    quint32 calcOffset(CFileExt& file, const quint32 offset, type_e t) const;
 
-    QString processLabel(const char * buffer, unsigned lastSeperator);
+    QString processLabel(const char * buffer, unsigned lastSeperator) const;
 
     quint32 offsetLBL1 = 0;
     quint32 sizeLBL1 = 0;
@@ -73,8 +73,6 @@ protected:
     QTextCodec * codec = nullptr;
     const quint8 mask;
     quint32 mask32;
-    quint64 mask64;
-
-    char buffer[1025];
+    quint64 mask64;    
 };
 #endif                           //IGARMINSTRTBL_H

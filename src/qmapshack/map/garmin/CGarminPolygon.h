@@ -32,7 +32,6 @@
 #include <QPolygonF>
 #include <QtCore>
 
-struct subdiv_desc_t;
 struct sign_info_t;
 
 class CGarminPolygon

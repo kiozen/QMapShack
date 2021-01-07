@@ -74,11 +74,10 @@ IGarminStrTbl::~IGarminStrTbl()
 }
 
 
-void IGarminStrTbl::readFile(CFileExt &file, quint32 offset, quint32 size, QByteArray& data)
+void IGarminStrTbl::readFile(CFileExt &file, quint32 offset, quint32 size, QByteArray& data) const
 {
     if(offset + size > file.size())
     {
-        //         throw exce_t(eErrOpen, tr("Failed to read: ") + file.filename());
         return;
     }
 
@@ -114,7 +113,7 @@ void IGarminStrTbl::readFile(CFileExt &file, quint32 offset, quint32 size, QByte
 }
 
 
-quint32 IGarminStrTbl::calcOffset(CFileExt& file, const quint32 offset, type_e t)
+quint32 IGarminStrTbl::calcOffset(CFileExt& file, const quint32 offset, type_e t) const
 {
     quint32 newOffset = offset;
 
@@ -148,7 +147,7 @@ quint32 IGarminStrTbl::calcOffset(CFileExt& file, const quint32 offset, type_e t
 }
 
 
-QString IGarminStrTbl::processLabel(const char * buffer, unsigned lastSeperator)
+QString IGarminStrTbl::processLabel(const char * buffer, unsigned lastSeperator) const
 {
     QString label;
     if (codepage != 0)

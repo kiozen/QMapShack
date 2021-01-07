@@ -1,5 +1,5 @@
 /**********************************************************************************************
-    Copyright (C) 2008 Oliver Eichler <oliver.eichler@gmx.de>
+    Copyright (C) 2020 Oliver Eichler <oliver.eichler@gmx.de>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,17 +16,22 @@
 
 **********************************************************************************************/
 
-#ifndef CGARMINSTRTBL8_H
-#define CGARMINSTRTBL8_H
+#ifndef CMAPEXCEPTION_H
+#define CMAPEXCEPTION_H
 
-#include "IGarminStrTbl.h"
+#include <QException>
 
-class CGarminStrTbl8 : public IGarminStrTbl
+class CMapException : public QException
 {
 public:
-    CGarminStrTbl8(const quint16 codepage, const quint8 mask, QObject * parent);
-    virtual ~CGarminStrTbl8();
+    enum exce_e {eErrOpen, eErrAccess, errFormat, errLock, errAbort};
 
-    void get(CFileExt& file, quint32 offset, type_e t, QStringList& info) const override;
+    CMapException(exce_e err, const QString& msg);
+    virtual ~CMapException() = default;
+
+    QString msg;
+    exce_e err;
 };
-#endif                           //CGARMINSTRTBL8_H
+
+#endif //CMAPEXCEPTION_H
+

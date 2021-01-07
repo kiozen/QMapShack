@@ -19,6 +19,7 @@
 #include "CMainWindow.h"
 #include "helpers/CFileExt.h"
 #include "map/CMapDraw.h"
+#include "map/CMapException.h"
 #include "map/CMapMAP.h"
 
 #include <proj_api.h>
@@ -41,7 +42,7 @@ CMapMAP::CMapMAP(const QString &filename, CMapDraw *parent)
     {
         readBasics();
     }
-    catch(const exce_t& e)
+    catch(const CMapException& e)
     {
         QMessageBox::critical(CMainWindow::getBestWidgetForParent(), tr("Failed ..."), e.msg, QMessageBox::Abort);
         return;
@@ -60,7 +61,7 @@ void CMapMAP::readBasics()
     CFileExt file(filename);
     if(!file.open(QIODevice::ReadOnly))
     {
-        throw exce_t(eErrOpen, tr("Failed to open: ") + filename);
+        throw CMapException(CMapException::eErrOpen, tr("Failed to open: ") + filename);
     }
 
     QDataStream stream(&file);
@@ -70,7 +71,7 @@ void CMapMAP::readBasics()
     stream.readRawData(header.signature, sizeof(header.signature));
     if(strncmp(header.signature, "mapsforge binary OSM", sizeof(header.signature)) != 0)
     {
-        throw exce_t(errFormat, tr("Bad file format: ") + filename);
+        throw CMapException(CMapException::errFormat, tr("Bad file format: ") + filename);
     }
 
     stream >> header.sizeHeader;

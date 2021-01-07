@@ -218,6 +218,7 @@ set( SRCS
     helpers/CWptIconManager.cpp
     main.cpp
     map/CMapDraw.cpp
+    map/CMapException.cpp
     map/CMapGEMF.cpp
     map/CMapIMG.cpp
     map/CMapItem.cpp
@@ -239,8 +240,9 @@ set( SRCS
     map/garmin/CGarminStrTbl6.cpp
     map/garmin/CGarminStrTbl8.cpp
     map/garmin/CGarminStrTblUtf8.cpp
+    map/garmin/CGarminSubfile.cpp
     map/garmin/CGarminTyp.cpp
-    map/garmin/IGarminStrTbl.cpp
+    map/garmin/IGarminStrTbl.cpp    
     map/mapsforge/types.cpp
     misc.h
     mouse/CMouseAdapter.cpp
@@ -572,6 +574,7 @@ set( HDRS
     helpers/Platform.h
     helpers/Signals.h
     map/CMapDraw.h
+    map/CMapException.h
     map/CMapGEMF.h
     map/CMapIMG.h
     map/CMapItem.h
@@ -595,8 +598,9 @@ set( HDRS
     map/garmin/CGarminStrTbl8.h
     map/garmin/CGarminStrTblUtf8.h
     map/garmin/CGarminTyp.h
+    map/garmin/CGarminSubfile.h
     map/garmin/Garmin.h
-    map/garmin/IGarminStrTbl.h
+    map/garmin/IGarminStrTbl.h    
     map/mapsforge/types.h
     mouse/CMouseAdapter.h
     mouse/CMouseDummy.h
