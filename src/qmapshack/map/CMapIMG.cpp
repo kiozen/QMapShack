@@ -553,24 +553,13 @@ void CMapIMG::readBasics()
 
     size_t blocksize = pImgHdr->blocksize();
 
+    size_t offsetFAT = gar_load(quint8, pImgHdr->offsetFAT) * 0x200;
+    size_t dataoffset = offsetFAT;
+
     // 1st read FAT
     QByteArray FATblock;
-    readFile(file, sizeof(hdr_img_t), sizeof(FATblock_t), FATblock);
+    readFile(file, dataoffset, sizeof(FATblock_t), FATblock);
     const FATblock_t * pFATBlock = (const FATblock_t * )FATblock.data();
-
-    size_t dataoffset = sizeof(hdr_img_t);
-
-    // skip dummy blocks at the beginning
-    while(dataoffset < (size_t)fsize)
-    {
-        if(pFATBlock->flag != 0x00)
-        {
-            break;
-        }
-        dataoffset += sizeof(FATblock_t);
-        readFile(file, quint32(dataoffset), quint32(sizeof(FATblock_t)), FATblock);
-        pFATBlock = (const FATblock_t * )FATblock.data();
-    }
 
     // start of new subfile part
     /*
@@ -631,21 +620,9 @@ void CMapIMG::readBasics()
         pFATBlock = (const FATblock_t * )FATblock.data();
     }
 
-    if((dataoffset == sizeof(hdr_img_t)) || (dataoffset >= (size_t)fsize))
+    if((dataoffset == offsetFAT) || (dataoffset >= (size_t)fsize))
     {
         throw exce_t(errFormat, tr("Failed to read file structure: ") + filename);
-    }
-
-    // gmapsupp.img files do not have a data offset field
-    if(gar_load(quint32, pImgHdr->dataoffset) == 0)
-    {
-        pImgHdr->dataoffset = gar_load(quint32, dataoffset);
-    }
-
-    // sometimes there are dummy blocks at the end of the FAT
-    if(gar_load(quint32, pImgHdr->dataoffset) != dataoffset)
-    {
-        dataoffset = gar_load(quint32, pImgHdr->dataoffset);
     }
 
 #ifdef DEBUG_SHOW_SECT_DESC
