@@ -21,9 +21,7 @@
 #include "gis/Poi.h"
 #include "GeoMath.h"
 #include "helpers/CDraw.h"
-#include "helpers/CFileExt.h"
 #include "helpers/CProgressDialog.h"
-#include "helpers/Platform.h"
 #include "map/CMapDraw.h"
 #include "map/CMapIMG.h"
 #include "map/garmin/CGarminStrTbl6.h"
@@ -685,7 +683,7 @@ void CMapIMG::readSubfileBasics(subfile_desc_t& subfile, CFileExt &file)
     }
 
     QByteArray trehdr;
-    readFile(file, subfile.parts["TRE"].offset, sizeof(hdr_tre_t), trehdr);
+    readSubfileHeader<hdr_tre_t>(file, subfile.parts["TRE"].offset, trehdr);
     hdr_tre_t * pTreHdr = (hdr_tre_t * )trehdr.data();
 
     subfile.isTransparent   = pTreHdr->POI_flags & 0x02;
@@ -700,7 +698,7 @@ void CMapIMG::readSubfileBasics(subfile_desc_t& subfile, CFileExt &file)
     qDebug() << "TRE2 size          :" << dec << gar_load(quint32, pTreHdr->tre2_size);
 #endif                       // DEBUG_SHOW_TRE_DATA
 
-    copyrights << QString(file.data(subfile.parts["TRE"].offset + gar_load(uint16_t, pTreHdr->length), 0x7FFF));
+    copyrights << QString(file.data(subfile.parts["TRE"].offset + gar_load(uint16_t, pTreHdr->size), 0x7FFF));
 
     // read map boundaries from header
     qint32 i32;
@@ -792,10 +790,10 @@ void CMapIMG::readSubfileBasics(subfile_desc_t& subfile, CFileExt &file)
     QVector<subdiv_desc_t>::iterator subdiv_prev = subdivs.end();
 
     // absolute offset of RGN data
-    QByteArray rgnhdr;
-    readFile(file, subfile.parts["RGN"].offset, sizeof(hdr_rgn_t), rgnhdr);
+    QByteArray rgnhdr;    
+    readSubfileHeader<hdr_rgn_t>(file, subfile.parts["RGN"].offset, rgnhdr);
     hdr_rgn_t * pRgnHdr = (hdr_rgn_t*)rgnhdr.data();
-    quint32 rgnoff = /*subfile.parts["RGN"].offset +*/ gar_load(quint32, pRgnHdr->offset);
+    quint32 rgnoff = /*subfile.parts["RGN"].offset +*/ gar_load(quint32, pRgnHdr->offset1);
 
     quint32 rgnOffPolyg2 = /*subfile.parts["RGN"].offset +*/ gar_load(quint32, pRgnHdr->offset_polyg2);
     quint32 rgnOffPolyl2 = /*subfile.parts["RGN"].offset +*/ gar_load(quint32, pRgnHdr->offset_polyl2);
@@ -912,10 +910,10 @@ void CMapIMG::readSubfileBasics(subfile_desc_t& subfile, CFileExt &file)
         ++pSubDivL;
         ++subdiv;
     }
-    subdivs.last().rgn_end = gar_load(quint32, pRgnHdr->hdr_rgn_t::offset) + gar_load(quint32, pRgnHdr->hdr_rgn_t::length);
+    subdivs.last().rgn_end = gar_load(quint32, pRgnHdr->offset1) + gar_load(quint32, pRgnHdr->size);
 
     // read extended NT elements
-    if((gar_load(uint16_t, pTreHdr->hdr_subfile_part_t::length) >= 0x9A) && pTreHdr->tre7_size && (gar_load(uint16_t, pTreHdr->tre7_rec_size) >= sizeof(tre_subdiv2_t)))
+    if((gar_load(uint16_t, pTreHdr->hdr_subfile_part_t::size) >= 0x9A) && pTreHdr->tre7_size && (gar_load(uint16_t, pTreHdr->tre7_rec_size) >= sizeof(tre_subdiv2_t)))
     {
         //rgnoff = subfile.parts["RGN"].offset;
         //         qDebug() << subdivs.count() << (pTreHdr->tre7_size / pTreHdr->tre7_rec_size) << pTreHdr->tre7_rec_size;
@@ -1008,8 +1006,8 @@ void CMapIMG::readSubfileBasics(subfile_desc_t& subfile, CFileExt &file)
 
     if(subfile.parts.contains("LBL"))
     {
-        QByteArray lblhdr;
-        readFile(file, subfile.parts["LBL"].offset, sizeof(hdr_lbl_t), lblhdr);
+        QByteArray lblhdr;                
+        readSubfileHeader<hdr_lbl_t>(file, subfile.parts["LBL"].offset, lblhdr);
         hdr_lbl_t * pLblHdr = (hdr_lbl_t*)lblhdr.data();
 
         quint32 offsetLbl1 = subfile.parts["LBL"].offset + gar_load(quint32, pLblHdr->lbl1_offset);
@@ -1020,13 +1018,13 @@ void CMapIMG::readSubfileBasics(subfile_desc_t& subfile, CFileExt &file)
         hdr_net_t * pNetHdr = nullptr;
         if(subfile.parts.contains("NET"))
         {
-            readFile(file, subfile.parts["NET"].offset, sizeof(hdr_net_t), nethdr);
+            readSubfileHeader<hdr_net_t>(file, subfile.parts["NET"].offset, nethdr);
             pNetHdr = (hdr_net_t*)nethdr.data();
             offsetNet1 = subfile.parts["NET"].offset + gar_load(quint32, pNetHdr->net1_offset);
         }
 
         quint16 codepage = 0;
-        if(gar_load(uint16_t, pLblHdr->length) > 0xAA)
+        if(gar_load(uint16_t, pLblHdr->size) > 0xAA)
         {
             codepage = gar_load(uint16_t, pLblHdr->codepage);
         }
