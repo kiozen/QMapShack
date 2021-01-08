@@ -574,7 +574,8 @@ void CMapIMG::readBasics()
                 subfile.setPart(
                     tmpstr,
                     quint32(gar_load(uint16_t, pFATBlock->blocks[0]) * blocksize),
-                    gar_load(quint32, pFATBlock->size)
+                    gar_load(quint32, pFATBlock->size),
+                    file
                     );
             }
         }
@@ -1289,17 +1290,21 @@ void CMapIMG::drawPolygons(QPainter& p, polytype_t& lines)
                 continue;
             }
 
-            QPolygonF &poly = line.pixel;
-
-            map->convertRad2Px(poly);
-
-//            simplifyPolyline(line);
-
-            p.drawPolygon(poly);
-
-            if(!polygonProperties[type].known)
+            if(line.tile.valid)
             {
-                qDebug() << "unknown polygon" << hex << type;
+            }
+            else
+            {
+                QPolygonF &poly = line.pixel;
+
+                map->convertRad2Px(poly);
+
+                p.drawPolygon(poly);
+
+                if(!polygonProperties[type].known)
+                {
+                    qDebug() << "unknown polygon" << hex << type;
+                }
             }
         }
     }

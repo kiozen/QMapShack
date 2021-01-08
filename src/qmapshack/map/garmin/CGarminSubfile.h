@@ -109,7 +109,7 @@ public:
     };
 
     part_t getPart(const QString& name) const;
-    void setPart(const QString& name, quint32 offset, quint32 size);
+    void setPart(const QString& name, quint32 offset, quint32 size, CFileExt &file);
 
     bool isGMP() const {return parts["GMP"].valid();}
     void readBasics(CFileExt& file);
@@ -130,8 +130,9 @@ protected:
         , {"TRE", part_t()}
         , {"RGN", part_t()}
         , {"LBL", part_t()}
+        , {"NET", part_t()}
         , {"NOD", part_t()}
-        , {"GMP", part_t()}
+        , {"DEM", part_t()}
     };
 
     QString copyright;

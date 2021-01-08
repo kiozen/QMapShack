@@ -59,6 +59,8 @@ public:
     bool lbl_in_NET = false;
     ///
     bool hasV2Label = false;
+    ///
+    bool hasExtBytes = false;
     /// delta longitude from subdivision center
     qint16 dLng = 0;
     /// delta latitude from subdivision center
@@ -77,9 +79,26 @@ public:
 
     static quint32 cnt;
     static qint32 maxVecSize;
+
+    struct tile_t
+    {
+        bool valid = false;
+        qreal northbound = 0;
+        qreal eastbound = 0;
+        qreal southbound = 0;
+        qreal westbound = 0;
+
+        quint32 index = 0;
+        quint32 size = 0;
+    };
+
+    tile_t tile;
+
 private:
+    quint32 getBlockLength(quint8 val);
     void bits_per_coord(quint8 base, quint8 bfirst, quint32& bx, quint32& by, sign_info_t& signinfo, bool isVer2);
     int bits_per_coord(quint8 base, bool is_signed);
+    void decodeTile(const quint8 *pData, quint8 size);
 };
 
 class CShiftReg

@@ -46,7 +46,20 @@ struct sign_info_t
 quint32 CGarminPolygon::cnt = 0;
 qint32 CGarminPolygon::maxVecSize = 0;
 
+static const quint32 var_fld_extract_mask[8]  = { 0x1FFFFFFF, 0x7F, 0x3FFF, 0x7F, 0x1FFFFF, 0x7F, 0x3FFF, 0x7F };
+static const quint8 var_fld_extract_bytes[8] = {          4,    1,      2,    1,        3,    1,      2,    1 };
+static const quint8 var_fld_extract_rshft[8] = {          3,    1,      2,    1,        3,    1,      2,    1 };
 
+quint32 CGarminPolygon::getBlockLength(quint8 val)
+{
+    quint32 CurValue   = val;
+    quint8 Lower3Bits = CurValue & 7;
+
+    quint32 BlockLength = CurValue >> var_fld_extract_rshft[Lower3Bits];
+    BlockLength &= var_fld_extract_mask[Lower3Bits];
+
+    return BlockLength;
+}
 
 quint32 CGarminPolygon::decode(qint32 iCenterLon, qint32 iCenterLat, quint32 shift, bool line, const quint8 * pData, const quint8 * pEnd)
 {
@@ -230,6 +243,7 @@ quint32 CGarminPolygon::decode2(qint32 iCenterLon, qint32 iCenterLat, quint32 sh
 
     type        = 0x10000 + (quint16(type) << 8) + (subtype & 0x1f);
     hasV2Label  = subtype & 0x20;
+    hasExtBytes  = subtype & 0x80;
     // delta longitude and latitude
     dLng = gar_ptr_load(uint16_t, pData);
     pData += 2;
@@ -266,9 +280,6 @@ quint32 CGarminPolygon::decode2(qint32 iCenterLon, qint32 iCenterLat, quint32 sh
     sign_info_t signinfo;
     bits_per_coord(bs_info, *pData, bx, by, signinfo, true);
 
-    //     qDebug() << ">>" << bs_len << bytes_total << (pEnd - pStart);
-
-    //     assert((pEnd - pStart) >= bytes_total);
     if(((quint32)(pEnd - pStart)) < bytes_total)
     {
         return pEnd - pStart;
@@ -300,30 +311,33 @@ quint32 CGarminPolygon::decode2(qint32 iCenterLon, qint32 iCenterLat, quint32 sh
             x1 = 0x7fffff;
         }
 
-//        xy.u = GARMIN_RAD(x1);
-//        xy.v = GARMIN_RAD(y1);
-
-//        if(qAbs(xy.v) > 2*M_PI || qAbs(xy.u) > 2*M_PI)
-//        {
-//            qDebug() << "bam";
-//            qDebug() << xy.u << xy.v << pStart << pEnd << (pEnd - pStart) << (cnt + 1) << line;
-//            //assert(0);
-//        }
-//#ifdef DEBUG_SHOW_POLY_PTS
-//        qDebug() << xy.u << xy.v << (RAD_TO_DEG * xy.u) << (RAD_TO_DEG * xy.v);
-//#endif
         coords << QPointF(GARMIN_RAD(x1), GARMIN_RAD(y1));
     }
 
+    pData += bs_len;
+
     if(hasV2Label)
     {
-        quint32 offset = gar_ptr_load(uint24_t, pData + bs_len);
+        quint32 offset = gar_ptr_load(uint24_t, pData);
         bytes_total += 3;
+        pData += 3;
         lbl_info = offset & 0x3FFFFF;
     }
     else
     {
         lbl_info = 0;
+    }
+
+    if(hasExtBytes)
+    {
+        /*quint8 flags = **/pData++;
+        quint8 size = getBlockLength(*pData++);
+        bytes_total += size + 2;        
+
+        if(type == 0x10613)
+        {
+            decodeTile(pData, size);
+        }
     }
 
     id = cnt++;
@@ -343,6 +357,39 @@ quint32 CGarminPolygon::decode2(qint32 iCenterLon, qint32 iCenterLat, quint32 sh
     return bytes_total;
 }
 
+void CGarminPolygon::decodeTile(const quint8 * pData, quint8 size)
+{
+    if(size == 22)
+    {
+        tile.index = gar_load(quint16, *(quint16*)pData);
+        pData += 2;
+    }
+    else
+    {
+        tile.index = gar_load(quint8, *pData);
+        pData += 1;
+    }
+    qint32 tmp32;
+    tmp32 = gar_load(qint32, *(qint32*)pData);
+    tile.northbound = GARMIN_DEG(tmp32 >> 8);
+    pData += 4;
+    tmp32 = gar_load(qint32, *(qint32*)pData);
+    tile.eastbound = GARMIN_DEG(tmp32 >> 8);
+    pData += 4;
+    tmp32 = gar_load(qint32, *(qint32*)pData);
+    tile.southbound = GARMIN_DEG(tmp32 >> 8);
+    pData += 4;
+    tmp32 = gar_load(qint32, *(qint32*)pData);
+    tile.westbound = GARMIN_DEG(tmp32 >> 8);
+    pData += 4;
+
+    tile.size = gar_load(quint32, *(qint32*)pData);
+    pData += 4;
+
+    tile.valid = true;
+
+//    qDebug() << tile.index << tile.northbound << tile.eastbound << tile.southbound << tile.westbound;
+}
 
 void CGarminPolygon::bits_per_coord(quint8 base, quint8 bfirst, quint32& bx, quint32& by, sign_info_t& signinfo, bool isVer2)
 {

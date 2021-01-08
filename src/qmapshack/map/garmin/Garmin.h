@@ -46,6 +46,18 @@ struct hdr_subfile_part_t
     qint8 second;
 };
 
+struct hdr_gmp_t : public hdr_subfile_part_t
+{
+    quint8 byte0x00000015_0x00000018[4] = {0};
+    quint32 offsetTRE = 0;
+    quint32 offsetRGN = 0;
+    quint32 offsetLBL = 0;
+    quint32 offsetNET = 0;
+    quint32 offsetNOD = 0;
+    quint32 offsetDEM = 0;
+    quint8 byte0x00000031_0x00000034[4] = {0};
+};
+
 struct hdr_tre_t : public hdr_subfile_part_t
 {
     quint24 northbound = {0};    ///< 0x00000015 .. 0x00000017  // writer.put3s(area.getMaxLat());

@@ -61,7 +61,7 @@ CGarminSubfile::part_t CGarminSubfile::getPart(const QString& name) const
     return parts[name];
 }
 
-void CGarminSubfile::setPart(const QString& name, quint32 offset, quint32 size)
+void CGarminSubfile::setPart(const QString& name, quint32 offset, quint32 size, CFileExt &file)
 {
     if(parts.contains(name))
     {
@@ -69,6 +69,41 @@ void CGarminSubfile::setPart(const QString& name, quint32 offset, quint32 size)
         part.offsetHead = offset;
         part.offsetData = offset;
         part.size = size;
+    }
+    else if(name == "GMP")
+    {
+        part_t part;
+        part.offsetHead = offset;
+        part.offsetData = offset;
+        part.size = size;
+
+        QByteArray gmphdr;
+        readSubfileHeader<hdr_gmp_t>(file, part, gmphdr);
+        const hdr_gmp_t * pGmpHdr = (hdr_gmp_t * )gmphdr.data();
+
+        quint32 offsetTre = gar_load(quint32, pGmpHdr->offsetTRE);
+        quint32 offsetRgn = gar_load(quint32, pGmpHdr->offsetRGN);
+        quint32 offsetLbl = gar_load(quint32, pGmpHdr->offsetLBL);
+        quint32 offsetNet = gar_load(quint32, pGmpHdr->offsetNET);
+        quint32 offsetNod = gar_load(quint32, pGmpHdr->offsetNOD);
+        quint32 offsetDem = gar_load(quint32, pGmpHdr->offsetDEM);
+
+        auto setOffset = [offset, size, this](quint32 offsetPart, const QString& namePart)
+                         {
+                             if(offsetPart)
+                             {
+                                 part_t& part = parts[namePart];
+                                 part.offsetHead = offset + offsetPart;
+                                 part.offsetData = offset;
+                                 part.size = size;
+                             }
+                         };
+        setOffset(offsetTre, "TRE");
+        setOffset(offsetRgn, "RGN");
+        setOffset(offsetLbl, "LBL");
+        setOffset(offsetNet, "NET");
+        setOffset(offsetNod, "NOD");
+        setOffset(offsetDem, "DEM");
     }
 }
 
@@ -298,41 +333,42 @@ void CGarminSubfile::readBasics(CFileExt &file)
     subdivs.last().rgn_end = gar_load(quint32, pRgnHdr->offset1) + gar_load(quint32, pRgnHdr->size);
 
     // read extended NT elements
-    if((gar_load(uint16_t, pTreHdr->hdr_subfile_part_t::size) >= 0x9A) && pTreHdr->tre7_size && (gar_load(uint16_t, pTreHdr->tre7_rec_size) >= sizeof(tre_subdiv2_t)))
+    if((gar_load(uint16_t, pTreHdr->hdr_subfile_part_t::size) >= 0x9A) && pTreHdr->tre7_size)
     {
+        const quint32 recSize = gar_load(quint32, pTreHdr->tre7_rec_size);
         QByteArray subdiv2;
         CMapIMG::readFile(file, partTre.offsetData + gar_load(quint32, pTreHdr->tre7_offset), gar_load(quint32, pTreHdr->tre7_size), subdiv2);
-        tre_subdiv2_t * pSubDiv2    = (tre_subdiv2_t*)subdiv2.data();
-        bool skipPois = ( gar_load(uint16_t, pTreHdr->tre7_rec_size) != sizeof(tre_subdiv2_t) );
+        quint32 * pSubDiv2 = (quint32*)subdiv2.data();
 
         subdiv       = subdivs.begin();
         subdiv_prev  = subdivs.begin();
-        subdiv->offsetPolygons2  = gar_load(quint32, pSubDiv2->offsetPolygons) + rgnOffPolyg2;
-        subdiv->offsetPolylines2 = gar_load(quint32, pSubDiv2->offsetPolyline) + rgnOffPolyl2;
-        subdiv->offsetPoints2    = skipPois ? 0 : gar_load(quint32, pSubDiv2->offsetPoints)   + rgnOffPoint2;
+
+        subdiv->offsetPolygons2 = (recSize >= 4) ? gar_load(quint32, pSubDiv2[0]) + rgnOffPolyg2 : rgnOffPolyg2;
+        subdiv->offsetPolylines2 = (recSize >= 8) ? gar_load(quint32, pSubDiv2[1]) + rgnOffPolyl2 : rgnOffPolyl2;
+        subdiv->offsetPoints2 = (recSize >= 12) ? gar_load(quint32, pSubDiv2[2]) + rgnOffPoint2 : rgnOffPoint2;
 
         ++subdiv;
-        pSubDiv2 = reinterpret_cast<tre_subdiv2_t*>((quint8*)pSubDiv2 + gar_endian(uint16_t, pTreHdr->tre7_rec_size));
+        pSubDiv2 = reinterpret_cast<quint32*>((quint8*)pSubDiv2 + recSize);
 
         while(subdiv != subdivs.end())
         {
-            subdiv->offsetPolygons2          = gar_load(quint32, pSubDiv2->offsetPolygons) + rgnOffPolyg2;
-            subdiv->offsetPolylines2         = gar_load(quint32, pSubDiv2->offsetPolyline) + rgnOffPolyl2;
-            subdiv->offsetPoints2            = skipPois ? 0 : gar_load(quint32, pSubDiv2->offsetPoints)   + rgnOffPoint2;
+            subdiv->offsetPolygons2 = (recSize >= 4) ? gar_load(quint32, pSubDiv2[0]) + rgnOffPolyg2 : rgnOffPolyg2;
+            subdiv->offsetPolylines2 = (recSize >= 8) ? gar_load(quint32, pSubDiv2[1]) + rgnOffPolyl2 : rgnOffPolyl2;
+            subdiv->offsetPoints2 = (recSize >= 12) ? gar_load(quint32, pSubDiv2[2]) + rgnOffPoint2 : rgnOffPoint2;
 
-            subdiv_prev->lengthPolygons2     = subdiv->offsetPolygons2    - subdiv_prev->offsetPolygons2;
-            subdiv_prev->lengthPolylines2    = subdiv->offsetPolylines2   - subdiv_prev->offsetPolylines2;
-            subdiv_prev->lengthPoints2       = skipPois ? 0 : subdiv->offsetPoints2      - subdiv_prev->offsetPoints2;
+            subdiv_prev->lengthPolygons2 = subdiv->offsetPolygons2 - subdiv_prev->offsetPolygons2;
+            subdiv_prev->lengthPolylines2 = subdiv->offsetPolylines2 - subdiv_prev->offsetPolylines2;
+            subdiv_prev->lengthPoints2 = subdiv->offsetPoints2 - subdiv_prev->offsetPoints2;
 
             subdiv_prev = subdiv;
 
             ++subdiv;
-            pSubDiv2 = reinterpret_cast<tre_subdiv2_t*>((quint8*)pSubDiv2 + gar_endian(uint16_t, pTreHdr->tre7_rec_size));
+            pSubDiv2 = reinterpret_cast<quint32*>((quint8*)pSubDiv2 + recSize);
         }
 
         subdiv_prev->lengthPolygons2  = rgnOffPolyg2 + rgnLenPolyg2 - subdiv_prev->offsetPolygons2;
         subdiv_prev->lengthPolylines2 = rgnOffPolyl2 + rgnLenPolyl2 - subdiv_prev->offsetPolylines2;
-        subdiv_prev->lengthPoints2    = skipPois ? 0 : rgnOffPoint2 + rgnLenPoint2 - subdiv_prev->offsetPoints2;
+        subdiv_prev->lengthPoints2    = rgnOffPoint2 + rgnLenPoint2 - subdiv_prev->offsetPoints2;
     }
 
 #ifdef DEBUG_SHOW_SUBDIV_DATA
