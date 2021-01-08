@@ -16,12 +16,13 @@
 
 **********************************************************************************************/
 
-#include "CGarminStrTbl8.h"
+#include "map/CMapIMG.h"
+#include "map/garmin/CGarminStrTbl8.h"
 
 #include <QtCore>
 
-CGarminStrTbl8::CGarminStrTbl8(const quint16 codepage, const quint8 mask, QObject * parent)
-    : IGarminStrTbl(codepage, mask, parent)
+CGarminStrTbl8::CGarminStrTbl8(const quint16 codepage, QObject * parent)
+    : IGarminStrTbl(codepage, parent)
 {
 }
 
@@ -49,7 +50,7 @@ void CGarminStrTbl8::get(CFileExt& file, quint32 offset, type_e t, QStringList& 
 
     QByteArray data;
     quint32 size = (sizeLBL1 - offset) < 200 ? (sizeLBL1 - offset) : 200;
-    readFile(file, offsetLBL1 + offset, size, data);
+    CMapIMG::readFile(file, offsetLBL1 + offset, size, data);
     char * lbl = data.data();
 
     unsigned lastSeperator = 0;

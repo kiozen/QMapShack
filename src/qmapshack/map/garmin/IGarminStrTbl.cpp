@@ -19,14 +19,14 @@
 #include "helpers/CFileExt.h"
 #include "helpers/Platform.h"
 #include "IGarminStrTbl.h"
+#include "map/CMapIMG.h"
 #include "units/IUnit.h"
 
 #include <QtCore>
 
-IGarminStrTbl::IGarminStrTbl(const quint16 codepage, const quint8 mask, QObject * parent)
+IGarminStrTbl::IGarminStrTbl(const quint16 codepage, QObject * parent)
     : QObject(parent)
     , codepage(codepage)
-    , mask(mask)
 {
     if(codepage != 0)
     {
@@ -54,64 +54,12 @@ IGarminStrTbl::IGarminStrTbl(const quint16 codepage, const quint8 mask, QObject 
             codec = QTextCodec::codecForName("Latin1");
         }
     }
-
-    mask32   = mask;
-    mask32 <<= 8;
-    mask32  |= mask;
-    mask32 <<= 8;
-    mask32  |= mask;
-    mask32 <<= 8;
-    mask32  |= mask;
-
-    mask64   = mask32;
-    mask64 <<= 32;
-    mask64  |= mask32;
 }
 
 
 IGarminStrTbl::~IGarminStrTbl()
 {
 }
-
-
-void IGarminStrTbl::readFile(CFileExt &file, quint32 offset, quint32 size, QByteArray& data) const
-{
-    if(offset + size > file.size())
-    {
-        return;
-    }
-
-    data = QByteArray::fromRawData(file.data(offset, size), size);
-    // wenn mask == 0 ist kein xor noetig
-    if(mask == 0)
-    {
-        return;
-    }
-
-#ifdef HOST_IS_64_BIT
-    quint64 * p64 = (quint64*)data.data();
-    for(quint32 i = 0; i < size / 8; ++i)
-    {
-        *p64++ ^= mask64;
-    }
-    quint32 rest = size % 8;
-    quint8 * p = (quint8*)p64;
-#else
-    quint32 * p32 = (quint32*)data.data();
-    for(quint32 i = 0; i < size / 4; ++i)
-    {
-        *p32++ ^= mask32;
-    }
-    quint32 rest = size % 4;
-    quint8 * p = (quint8*)p32;
-#endif
-
-    for(quint32 i = 0; i < rest; ++i)
-    {
-        *p++ ^= mask;
-    }
-}
-
 
 quint32 IGarminStrTbl::calcOffset(CFileExt& file, const quint32 offset, type_e t) const
 {
@@ -120,7 +68,7 @@ quint32 IGarminStrTbl::calcOffset(CFileExt& file, const quint32 offset, type_e t
     if(t == poi)
     {
         QByteArray buffer;
-        readFile(file, offsetLBL6 + offset, sizeof(quint32), buffer);
+        CMapIMG::readFile(file, offsetLBL6 + offset, sizeof(quint32), buffer);
         newOffset = gar_ptr_load(quint32, buffer.data());
         newOffset = (newOffset & 0x003FFFFF);
     }
@@ -132,7 +80,7 @@ quint32 IGarminStrTbl::calcOffset(CFileExt& file, const quint32 offset, type_e t
         }
 
         QByteArray data;
-        readFile(file,  offsetNET1 + (offset << addrshift2), sizeof(quint32), data);
+        CMapIMG::readFile(file,  offsetNET1 + (offset << addrshift2), sizeof(quint32), data);
         newOffset = gar_ptr_load(quint32, data.data());
         if(newOffset & 0x00400000)
         {

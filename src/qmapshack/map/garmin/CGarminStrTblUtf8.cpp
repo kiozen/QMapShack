@@ -15,12 +15,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 **********************************************************************************************/
-#include "CGarminStrTblUtf8.h"
+#include "map/CMapIMG.h"
+#include "map/garmin/CGarminStrTblUtf8.h"
 
 #include <QtCore>
 
-CGarminStrTblUtf8::CGarminStrTblUtf8(const quint16 codepage, const quint8 mask, QObject * parent)
-    : IGarminStrTbl(codepage, mask, parent)
+CGarminStrTblUtf8::CGarminStrTblUtf8(const quint16 codepage, QObject * parent)
+    : IGarminStrTbl(codepage, parent)
 {
 }
 
@@ -48,7 +49,7 @@ void CGarminStrTblUtf8::get(CFileExt& file, quint32 offset, type_e t, QStringLis
 
     QByteArray data;
     quint32 size = (sizeLBL1 - offset) < 200 ? (sizeLBL1 - offset) : 200;
-    readFile(file, offsetLBL1 + offset, size, data);
+    CMapIMG::readFile(file, offsetLBL1 + offset, size, data);
     char * lbl = data.data();
 
     char buffer[1025];

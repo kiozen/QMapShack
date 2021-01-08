@@ -17,15 +17,26 @@
 **********************************************************************************************/
 
 #include "map/CMapException.h"
+#include "map/CMapIMG.h"
 #include "map/garmin/CGarminStrTbl6.h"
 #include "map/garmin/CGarminStrTbl8.h"
 #include "map/garmin/CGarminStrTblUtf8.h"
 #include "map/garmin/CGarminSubfile.h"
 #include "map/garmin/Garmin.h"
 
+template<typename T>
+void readSubfileHeader(CFileExt& file, const CGarminSubfile::part_t& part, QByteArray& hdr)
+{
+    quint16 size = qMin(gar_load(quint16, *(quint16*)file.data(part.offsetHead, sizeof(quint16))), quint16(sizeof(T)));
+    CMapIMG::readFile(file, part.offsetHead, size, hdr);
 
-quint64 CGarminSubfile::mask64 = 0;
-quint8 CGarminSubfile::mask = 0;
+    qint32 gap = sizeof(T) -  size;
+    if(gap)
+    {
+        hdr += QByteArray(gap, '\0');
+    }
+}
+
 
 CGarminSubfile::CGarminSubfile()
 {
@@ -40,7 +51,7 @@ QByteArray CGarminSubfile::getRgnData(CFileExt& file) const
 {
     QByteArray rgndata;
     const part_t& part = parts["RGN"];
-    readFile(file, part.offsetData, part.size, rgndata);
+    CMapIMG::readFile(file, part.offsetData, part.size, rgndata);
     return rgndata;
 }
 
@@ -58,34 +69,6 @@ void CGarminSubfile::setPart(const QString& name, quint32 offset, quint32 size)
         part.offsetHead = offset;
         part.offsetData = offset;
         part.size = size;
-    }
-}
-
-void CGarminSubfile::readFile(CFileExt& file, quint32 offset, quint32 size, QByteArray& data)
-{
-    if(offset + size > file.size())
-    {
-        throw CMapException(CMapException::eErrOpen, tr("Failed to read: ") + file.fileName());
-    }
-
-    data = QByteArray::fromRawData(file.data(offset, size), size);
-
-    if(mask == 0)
-    {
-        return;
-    }
-
-    quint64 * p64 = (quint64*)data.data();
-    for(quint32 i = 0; i < size / 8; ++i)
-    {
-        *p64++ ^= mask64;
-    }
-    quint32 rest = size % 8;
-    quint8 * p = (quint8*)p64;
-
-    for(quint32 i = 0; i < rest; ++i)
-    {
-        *p++ ^= mask;
     }
 }
 
@@ -145,7 +128,7 @@ void CGarminSubfile::readBasics(CFileExt &file)
 
 
     QByteArray maplevel;
-    readFile(file, partTre.offsetData + gar_load(quint32, pTreHdr->tre1_offset), gar_load(quint32, pTreHdr->tre1_size), maplevel);
+    CMapIMG::readFile(file, partTre.offsetData + gar_load(quint32, pTreHdr->tre1_offset), gar_load(quint32, pTreHdr->tre1_size), maplevel);
     const tre_map_level_t * pMapLevel = (const tre_map_level_t * )maplevel.data();
 
     if(pTreHdr->flag & 0x80)
@@ -188,7 +171,7 @@ void CGarminSubfile::readBasics(CFileExt &file)
 
     // point to first 16 byte subdivision definition entry
     QByteArray subdiv_n;
-    readFile(file, partTre.offsetData + gar_load(quint32, pTreHdr->tre2_offset), gar_load(quint32, pTreHdr->tre2_size), subdiv_n);
+    CMapIMG::readFile(file, partTre.offsetData + gar_load(quint32, pTreHdr->tre2_offset), gar_load(quint32, pTreHdr->tre2_size), subdiv_n);
     tre_subdiv_next_t * pSubDivN = (tre_subdiv_next_t*)subdiv_n.data();
 
     subdivs.resize(nsubdivs);
@@ -318,7 +301,7 @@ void CGarminSubfile::readBasics(CFileExt &file)
     if((gar_load(uint16_t, pTreHdr->hdr_subfile_part_t::size) >= 0x9A) && pTreHdr->tre7_size && (gar_load(uint16_t, pTreHdr->tre7_rec_size) >= sizeof(tre_subdiv2_t)))
     {
         QByteArray subdiv2;
-        readFile(file, partTre.offsetData + gar_load(quint32, pTreHdr->tre7_offset), gar_load(quint32, pTreHdr->tre7_size), subdiv2);
+        CMapIMG::readFile(file, partTre.offsetData + gar_load(quint32, pTreHdr->tre7_offset), gar_load(quint32, pTreHdr->tre7_size), subdiv2);
         tre_subdiv2_t * pSubDiv2    = (tre_subdiv2_t*)subdiv2.data();
         bool skipPois = ( gar_load(uint16_t, pTreHdr->tre7_rec_size) != sizeof(tre_subdiv2_t) );
 
@@ -414,15 +397,15 @@ void CGarminSubfile::readBasics(CFileExt &file)
         switch(pLblHdr->coding)
         {
         case 0x06:
-            strtbl = new CGarminStrTbl6(codepage, mask, nullptr);
+            strtbl = new CGarminStrTbl6(codepage, nullptr);
             break;
 
         case 0x09:
-            strtbl = new CGarminStrTbl8(codepage, mask, nullptr);
+            strtbl = new CGarminStrTbl8(codepage, nullptr);
             break;
 
         case 0x0A:
-            strtbl = new CGarminStrTblUtf8(codepage, mask, nullptr);
+            strtbl = new CGarminStrTblUtf8(codepage, nullptr);
             break;
 
         default:

@@ -469,38 +469,10 @@ void CMapIMG::readFile(CFileExt& file, quint32 offset, quint32 size, QByteArray&
 {
     if(offset + size > file.size())
     {
-        throw CMapException(CMapException::eErrOpen, tr("Failed to read: ") + filename);
+        throw CMapException(CMapException::eErrOpen, tr("Failed to read: ") + file.fileName());
     }
 
     data = QByteArray::fromRawData(file.data(offset, size), size);
-    // wenn mask == 0 ist kein xor noetig
-    if(mask == 0)
-    {
-        return;
-    }
-
-#ifdef HOST_IS_64_BIT
-    quint64 * p64 = (quint64*)data.data();
-    for(quint32 i = 0; i < size / 8; ++i)
-    {
-        *p64++ ^= mask64;
-    }
-    quint32 rest = size % 8;
-    quint8 * p = (quint8*)p64;
-#else
-    quint32 * p32 = (quint32*)data.data();
-    for(quint32 i = 0; i < size / 4; ++i)
-    {
-        *p32++ ^= mask32;
-    }
-    quint32 rest = size % 4;
-    quint8 * p = (quint8*)p32;
-#endif
-
-    for(quint32 i = 0; i < rest; ++i)
-    {
-        *p++ ^= mask;
-    }
 }
 
 
@@ -515,19 +487,14 @@ void CMapIMG::readBasics()
         throw CMapException(CMapException::eErrOpen, tr("Failed to open: ") + filename);
     }
 
-    mask = (quint8) * file.data(0, 1);
+    quint8 mask = (quint8) * file.data(0, 1);
 
-    mask32 = mask;
-    mask32 <<= 8;
-    mask32  |= mask;
-    mask32 <<= 8;
-    mask32  |= mask;
-    mask32 <<= 8;
-    mask32  |= mask;
-
-    mask64   = mask32;
-    mask64 <<= 32;
-    mask64  |= mask32;
+    if(mask != 0)
+    {
+        throw CMapException(CMapException::eErrOpen, tr("File contains locked / encrypted data. Garmin does not "
+                                                        "want you to use this file with any other software than "
+                                                        "the one supplied by Garmin."));
+    }
 
     // read hdr_img_t
     QByteArray imghdr;

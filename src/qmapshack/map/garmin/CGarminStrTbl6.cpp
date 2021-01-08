@@ -15,7 +15,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 **********************************************************************************************/
-#include "CGarminStrTbl6.h"
+#include "map/CMapIMG.h"
+#include "map/garmin/CGarminStrTbl6.h"
 
 #include <QtCore>
 
@@ -44,8 +45,8 @@ const char CGarminStrTbl6::str6tbl3[] =
     '`', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'
 };
 
-CGarminStrTbl6::CGarminStrTbl6(const quint16 codepage, const quint8 mask, QObject * parent)
-    : IGarminStrTbl(codepage, mask, parent)
+CGarminStrTbl6::CGarminStrTbl6(const quint16 codepage,  QObject * parent)
+    : IGarminStrTbl(codepage, parent)
 {
 }
 
@@ -94,7 +95,7 @@ void CGarminStrTbl6::get(CFileExt& file, quint32 offset, type_e t, QStringList& 
     QByteArray data;
     quint32 size = (sizeLBL1 - offset) < 200 ? (sizeLBL1 - offset) : 200;
 
-    readFile(file, offsetLBL1 + offset, size, data);
+    CMapIMG::readFile(file, offsetLBL1 + offset, size, data);
 
     const quint8 * p = (quint8*)data.data();
 

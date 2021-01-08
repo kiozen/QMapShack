@@ -114,8 +114,6 @@ public:
     bool isGMP() const {return parts["GMP"].valid();}
     void readBasics(CFileExt& file);
 
-    static void readFile(CFileExt& file, quint32 offset, quint32 size, QByteArray& data);
-
     const QString& getCopyright() const {return copyright;}
     const QRectF& getArea() const {return area;}
     const QVector<map_level_t>& getMaplevels() const {return maplevels;}
@@ -124,21 +122,6 @@ public:
     const IGarminStrTbl * getStrtbl() const {return strtbl;}
 
 protected:
-    template<typename T>
-    void readSubfileHeader(CFileExt& file, const part_t& part, QByteArray& hdr)
-    {
-        quint16 size = qMin(gar_load(quint16, *(quint16*)file.data(part.offsetHead, sizeof(quint16))), quint16(sizeof(T)));
-        readFile(file, part.offsetHead, size, hdr);
-
-        qint32 gap = sizeof(T) -  size;
-        if(gap)
-        {
-            hdr += QByteArray(gap, '\0');
-        }
-    }
-
-    static quint64 mask64;
-    static quint8 mask;
 
     bool transparent = false;
 
