@@ -237,13 +237,15 @@ quint32 CGarminPolygon::decode2(qint32 iCenterLon, qint32 iCenterLat, quint32 sh
     labels.clear();
     coords.resize(0);
     coords.reserve(maxVecSize);
+    tile.valid = false;
+    tile.img = QImage();
 
     type        = *pData++;
     subtype     = *pData++;
 
     type        = 0x10000 + (quint16(type) << 8) + (subtype & 0x1f);
     hasV2Label  = subtype & 0x20;
-    hasExtBytes  = subtype & 0x80;
+    hasExtBytes = subtype & 0x80;
     // delta longitude and latitude
     dLng = gar_ptr_load(uint16_t, pData);
     pData += 2;
@@ -371,22 +373,28 @@ void CGarminPolygon::decodeTile(const quint8 * pData, quint8 size)
     }
     qint32 tmp32;
     tmp32 = gar_load(qint32, *(qint32*)pData);
-    tile.northbound = GARMIN_DEG(tmp32 >> 8);
+    tile.northbound = GARMIN_RAD(tmp32 >> 8);
     pData += 4;
     tmp32 = gar_load(qint32, *(qint32*)pData);
-    tile.eastbound = GARMIN_DEG(tmp32 >> 8);
+    tile.eastbound = GARMIN_RAD(tmp32 >> 8);
     pData += 4;
     tmp32 = gar_load(qint32, *(qint32*)pData);
-    tile.southbound = GARMIN_DEG(tmp32 >> 8);
+    tile.southbound = GARMIN_RAD(tmp32 >> 8);
     pData += 4;
     tmp32 = gar_load(qint32, *(qint32*)pData);
-    tile.westbound = GARMIN_DEG(tmp32 >> 8);
+    tile.westbound = GARMIN_RAD(tmp32 >> 8);
     pData += 4;
 
     tile.size = gar_load(quint32, *(qint32*)pData);
     pData += 4;
 
     tile.valid = true;
+
+    coords.clear();
+    coords << QPointF(tile.westbound, tile.northbound);
+    coords << QPointF(tile.eastbound, tile.northbound);
+    coords << QPointF(tile.eastbound, tile.southbound);
+    coords << QPointF(tile.westbound, tile.southbound);
 
 //    qDebug() << tile.index << tile.northbound << tile.eastbound << tile.southbound << tile.westbound;
 }
@@ -397,14 +405,12 @@ void CGarminPolygon::bits_per_coord(quint8 base, quint8 bfirst, quint32& bx, qui
 
     quint8 mask = 0x1;
 
-    //     x_sign_same = bfirst & 0x1;
     x_sign_same = bfirst & mask;
     mask <<= 1;
 
     if(x_sign_same)
     {
         signinfo.x_has_sign = false;
-        //         signinfo.nx         = bfirst & 0x2;
         signinfo.nx         = bfirst & mask;
         mask <<= 1;
         ++signinfo.sign_info_bits;
@@ -415,7 +421,6 @@ void CGarminPolygon::bits_per_coord(quint8 base, quint8 bfirst, quint32& bx, qui
     }
     bx = bits_per_coord(base & 0x0F, signinfo.x_has_sign);
 
-    //     y_sign_same = x_sign_same ? (bfirst & 0x04) : (bfirst & 0x02);
     y_sign_same = bfirst & mask;
     mask <<= 1;
 

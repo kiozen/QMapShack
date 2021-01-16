@@ -118,7 +118,13 @@ public:
     const QRectF& getArea() const {return area;}
     const QVector<map_level_t>& getMaplevels() const {return maplevels;}
     const QVector<subdiv_desc_t>& getSubdivs() const {return subdivs;}
-    QByteArray getRgnData(CFileExt& file) const;
+
+    void loadData(CFileExt& file);
+    const QByteArray& getRgnData() const {return dataRgn;}
+    const QByteArray& getLbl28Data() const {return dataLbl28;}
+    const QByteArray& getLbl29Data() const {return dataLbl29;}
+    void releaseData();
+
     const IGarminStrTbl * getStrtbl() const {return strtbl;}
 
 protected:
@@ -147,6 +153,16 @@ protected:
     QVector<subdiv_desc_t> subdivs;
 
     QPointer<IGarminStrTbl> strtbl;
+
+    quint32 offsetLbl28 = 0;
+    quint32 lengthLbl28 = 0;
+    quint32 offsetLbl29 = 0;
+    quint32 lengthLbl29 = 0;
+
+    QByteArray dataRgn;
+    QByteArray dataLbl28;
+    QByteArray dataLbl29;
+
 };
 
 #endif //CGARMINSUBFILE_H

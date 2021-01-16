@@ -47,12 +47,19 @@ CGarminSubfile::~CGarminSubfile()
     delete strtbl;
 }
 
-QByteArray CGarminSubfile::getRgnData(CFileExt& file) const
+void CGarminSubfile::loadData(CFileExt& file)
 {
-    QByteArray rgndata;
     const part_t& part = parts["RGN"];
-    CMapIMG::readFile(file, part.offsetData, part.size, rgndata);
-    return rgndata;
+    CMapIMG::readFile(file, part.offsetData, part.size, dataRgn);
+    CMapIMG::readFile(file, offsetLbl28, lengthLbl28, dataLbl28);
+    CMapIMG::readFile(file, offsetLbl29, lengthLbl29, dataLbl29);
+}
+
+void CGarminSubfile::releaseData()
+{
+    dataRgn.clear();
+    dataLbl28.clear();
+    dataLbl29.clear();
 }
 
 CGarminSubfile::part_t CGarminSubfile::getPart(const QString& name) const
@@ -408,6 +415,14 @@ void CGarminSubfile::readBasics(CFileExt &file)
         QByteArray lblhdr;
         readSubfileHeader<hdr_lbl_t>(file, partLbl, lblhdr);
         hdr_lbl_t * pLblHdr = (hdr_lbl_t*)lblhdr.data();
+
+        if(0x0183 < gar_load(quint32, pLblHdr->size))
+        {
+            offsetLbl28 = partLbl.offsetData + gar_load(quint32, pLblHdr->lbl28_offset);
+            lengthLbl28 = gar_load(quint32, pLblHdr->lbl28_length);
+            offsetLbl29 = partLbl.offsetData + gar_load(quint32, pLblHdr->lbl29_offset);
+            lengthLbl29 = gar_load(quint32, pLblHdr->lbl29_length);
+        }
 
         quint32 offsetLbl1 = partLbl.offsetData + gar_load(quint32, pLblHdr->lbl1_offset);
         quint32 offsetLbl6 = partLbl.offsetData + gar_load(quint32, pLblHdr->lbl6_offset);

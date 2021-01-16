@@ -421,6 +421,8 @@ void CMapIMG::setupTyp()
         polygonDrawOrder << (0x7F - i);
     }
 
+    polygonDrawOrder.push_front(0x10613); /// @todo probably this needs to be removed again
+
     pointProperties.clear();
 
     if(!typeFile.isEmpty())
@@ -921,7 +923,7 @@ void CMapIMG::loadVisibleData(bool fast, polytype_t& polygons, polytype_t& polyl
     }
 #endif
 
-    for(const CGarminSubfile &subfile : subfiles)
+    for(CGarminSubfile &subfile : subfiles)
     {
         if(!subfile.getArea().intersects(viewport))
         {
@@ -941,7 +943,7 @@ void CMapIMG::loadVisibleData(bool fast, polytype_t& polygons, polytype_t& polyl
         }
 #endif
 
-        const QByteArray& rgndata = subfile.getRgnData(file);
+        subfile.loadData(file);
 
         // collect polylines
         for(const CGarminSubfile::subdiv_desc_t &subdiv : subfile.getSubdivs())
@@ -955,7 +957,7 @@ void CMapIMG::loadVisibleData(bool fast, polytype_t& polygons, polytype_t& polyl
             {
                 break;
             }
-            loadSubDiv(file, subdiv, subfile.getStrtbl(), rgndata, fast, viewport, polylines, polygons, points, pois);
+            loadSubDiv(file, subdiv, subfile, fast, viewport, polylines, polygons, points, pois);
 
 #ifdef DEBUG_SHOW_SECTION_BORDERS
             const QRectF& a = subdiv.area;
@@ -973,6 +975,7 @@ void CMapIMG::loadVisibleData(bool fast, polytype_t& polygons, polytype_t& polyl
 #endif // DEBUG_SHOW_SECTION_BORDERS
         }
 
+        subfile.releaseData();
 #ifdef DEBUG_SHOW_SUBDIV_BORDERS
         QPointF p1 = subfile.area.bottomLeft();
         QPointF p2 = subfile.area.bottomRight();
@@ -1002,7 +1005,7 @@ void CMapIMG::loadVisibleData(bool fast, polytype_t& polygons, polytype_t& polyl
 #endif
 }
 
-void CMapIMG::loadSubDiv(CFileExt &file, const CGarminSubfile::subdiv_desc_t& subdiv, const IGarminStrTbl * strtbl, const QByteArray& rgndata, bool fast, const QRectF& viewport, polytype_t& polylines, polytype_t& polygons, pointtype_t& points, pointtype_t& pois)
+void CMapIMG::loadSubDiv(CFileExt &file, const CGarminSubfile::subdiv_desc_t& subdiv, const CGarminSubfile &subfile, bool fast, const QRectF& viewport, polytype_t& polylines, polytype_t& polygons, pointtype_t& points, pointtype_t& pois)
 {
     if(subdiv.rgn_start == subdiv.rgn_end && !subdiv.lengthPolygons2 && !subdiv.lengthPolylines2 && !subdiv.lengthPoints2)
     {
@@ -1011,6 +1014,12 @@ void CMapIMG::loadSubDiv(CFileExt &file, const CGarminSubfile::subdiv_desc_t& su
     //fprintf(stderr, "loadSubDiv\n");
     //     qDebug() << "---------" << file.fileName() << "---------";
 
+    const IGarminStrTbl *strtbl = subfile.getStrtbl();
+    const QByteArray& rgndata = subfile.getRgnData();
+    const QByteArray& lbl28data = subfile.getLbl28Data();
+    const QByteArray& lbl29data = subfile.getLbl29Data();
+
+    const quint32 * pLbl28 = (const quint32*)lbl28data.data();
     const quint8 * pRawData = (quint8*)rgndata.data();
 
     quint32 opnt = 0, oidx = 0, opline = 0, opgon = 0;
@@ -1214,6 +1223,12 @@ void CMapIMG::loadSubDiv(CFileExt &file, const CGarminSubfile::subdiv_desc_t& su
                 continue;
             }
 
+            if(p.tile.valid)
+            {
+                quint32 offset = pLbl28[p.tile.index];
+                p.tile.img.loadFromData((const quint8*)lbl29data.data() + offset, p.tile.size, "JPEG");
+            }
+
             if(strtbl && !p.lbl_in_NET && p.lbl_info && !fast)
             {
                 strtbl->get(file, p.lbl_info, IGarminStrTbl::norm, p.labels);
@@ -1290,8 +1305,9 @@ void CMapIMG::drawPolygons(QPainter& p, polytype_t& lines)
                 continue;
             }
 
-            if(line.tile.valid)
+            if(!line.tile.img.isNull())
             {
+                drawTile(line.tile.img, line.coords, p);
             }
             else
             {

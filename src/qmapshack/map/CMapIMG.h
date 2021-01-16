@@ -88,7 +88,7 @@ private:
     void readSubfileBasics(CGarminSubfile& subfile, CFileExt &file);
     void processPrimaryMapData();
     void loadVisibleData(bool fast, polytype_t& polygons, polytype_t& polylines, pointtype_t& points, pointtype_t& pois, unsigned level, const QRectF& viewport, QPainter& p);
-    void loadSubDiv(CFileExt &file, const CGarminSubfile::subdiv_desc_t& subdiv, const IGarminStrTbl *strtbl, const QByteArray& rgndata, bool fast, const QRectF& viewport, polytype_t& polylines, polytype_t& polygons, pointtype_t& points, pointtype_t& pois);
+    void loadSubDiv(CFileExt &file, const CGarminSubfile::subdiv_desc_t& subdiv, const CGarminSubfile& subfile, bool fast, const QRectF& viewport, polytype_t& polylines, polytype_t& polygons, pointtype_t& points, pointtype_t& pois);
     bool intersectsWithExistingLabel(const QRect &rect) const;
     void addLabel(const CGarminPoint &pt, const QRect &rect, CGarminTyp::label_type_e type);
     void drawPolygons(QPainter& p, polytype_t& lines);

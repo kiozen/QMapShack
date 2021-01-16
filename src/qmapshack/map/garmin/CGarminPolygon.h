@@ -29,6 +29,7 @@
 #ifdef __MINGW32__
 #undef LP
 #endif
+#include <QImage>
 #include <QPolygonF>
 #include <QtCore>
 
@@ -90,6 +91,8 @@ public:
 
         quint32 index = 0;
         quint32 size = 0;
+
+        QImage img;
     };
 
     tile_t tile;
